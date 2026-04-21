@@ -1,0 +1,6 @@
+@Smart_Farm_HostAddress = http://localhost:5043
+
+GET {{Smart_Farm_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

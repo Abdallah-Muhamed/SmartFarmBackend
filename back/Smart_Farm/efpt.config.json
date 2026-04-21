@@ -1,0 +1,118 @@
+﻿{
+   "CodeGenerationMode": 4,
+   "ContextClassName": "farContext",
+   "ContextNamespace": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": true,
+   "IrregularWords": null,
+   "MinimumProductVersion": "2.6.1378",
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "Models",
+   "PluralRules": null,
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "Smart_Farm",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 2,
+   "SelectedToBeGenerated": 0,
+   "SingularRules": null,
+   "T4TemplatePath": null,
+   "Tables": [
+      {
+         "Name": "[dbo].[AI_Diagnosis]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[BELONG_TO]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[COMPATIBILITY]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CROP]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CROP_FERTILIZER]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Disease]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[FERTILIZER]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[GROWS_IN]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[IRRIGATION]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[IRRIGATION_STAGE]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ORDERS]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[PLANT]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[PRODUCT]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[SEASON]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Task]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[USER_PHONE]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[USERS]",
+         "ObjectType": 0
+      }
+   ],
+   "UiHint": null,
+   "UncountableWords": null,
+   "UseAsyncStoredProcedureCalls": true,
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": true,
+   "UseDatabaseNamesForRoutines": true,
+   "UseDateOnlyTimeOnly": true,
+   "UseDbContextSplitting": false,
+   "UseDecimalDataAnnotationForSprocResult": true,
+   "UseFluentApiOnly": false,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": true,
+   "UseInternalAccessModifiersForSprocsAndFunctions": false,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UsePrefixNavigationNaming": false,
+   "UseSchemaFolders": false,
+   "UseSchemaNamespaces": false,
+   "UseSpatial": false,
+   "UseT4": false,
+   "UseT4Split": false,
+   "UseTypedTvpParameters": true
+}

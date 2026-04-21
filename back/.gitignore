@@ -1,0 +1,27 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Secrets - NEVER commit these
+appsettings.Local.json
+appsettings.Development.json
+
+# Logs
+*.log
+
+# Publish profiles
+Properties/PublishProfiles/
+
+# Cursor AI
+.cursor/
+
+# Agents & skills
+.agents/
+
+# Lock files
+skills-lock.json
