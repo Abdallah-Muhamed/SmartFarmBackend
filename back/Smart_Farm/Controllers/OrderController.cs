@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -23,35 +23,12 @@ namespace Smart_Farm.Controllers
             db = context;
         }
 
-        // get all
+        // list mine (alias: GET api/order and GET api/order/me)
         [HttpGet]
-        public IActionResult GetAll()
-        {
-            var orders = db.ORDERs
-                .Include(o => o.UidNavigation)
-                .Include(o => o.PidNavigation)
-                .Select(o => new OrderDTO
-                {
-                    Oid = o.Oid,
-                    Status = o.Status,
-                    Order_date = o.Order_date,
-                    Quantity = o.Quantity,
-                    Total_price = o.Total_price,
-                    Uid = o.Uid,
-                    Pid = o.Pid,
-                    UserName = o.UidNavigation.First_name,
-                    ProductName = o.PidNavigation.Description
-                })
-                .ToList();
-
-            return Ok(orders);
-        }
-
         [HttpGet("me")]
         public IActionResult GetMine()
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             var orders = db.ORDERs
                 .Include(o => o.UidNavigation)
@@ -78,10 +55,11 @@ namespace Smart_Farm.Controllers
         [HttpGet("{id}")]
         public ActionResult GetById(int id)
         {
+            var uid = UserClaims.RequireUid(User);
             var order = db.ORDERs
                 .Include(o => o.UidNavigation)
                 .Include(o => o.PidNavigation)
-                .Where(o => o.Oid == id)
+                .Where(o => o.Oid == id && o.Uid == uid)
                 .Select(o => new OrderDTO
                 {
                     Oid = o.Oid,
@@ -106,8 +84,7 @@ namespace Smart_Farm.Controllers
         [HttpPost]
         public ActionResult post(OrderRequestDto b)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             if (b == null) return BadRequest("orders is null");
             if (!ModelState.IsValid) return BadRequest();
@@ -138,8 +115,7 @@ namespace Smart_Farm.Controllers
 
         public ActionResult edit(OrderRequestDto b, int id)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             if (b == null) return BadRequest("orders is null");
             var entity = db.ORDERs.Find(id);
@@ -162,8 +138,7 @@ namespace Smart_Farm.Controllers
         [HttpDelete("{id}")]
         public ActionResult Delete(int id)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             ORDER? b = db.ORDERs.Find(id);
             if (b == null) return NotFound();
@@ -179,6 +154,9 @@ namespace Smart_Farm.Controllers
         [HttpGet("user/{uid}")]
         public IActionResult GetOrdersByUser(int uid)
         {
+            var me = UserClaims.RequireUid(User);
+            if (uid != me) return Forbid();
+
             var orders = db.ORDERs
                 .Include(o => o.UidNavigation)
                 .Include(o => o.PidNavigation)
@@ -205,10 +183,11 @@ namespace Smart_Farm.Controllers
         [HttpGet("product/{pid}")]
         public ActionResult GetOrdersByProduct(int pid)
         {
+            var uid = UserClaims.RequireUid(User);
             var orders = db.ORDERs
                 .Include(o => o.UidNavigation)
                 .Include(o => o.PidNavigation)
-                .Where(o => o.Pid == pid)
+                .Where(o => o.Pid == pid && o.Uid == uid)
                 .Select(o => new OrderDTO
                 {
                     Oid = o.Oid,
@@ -229,8 +208,7 @@ namespace Smart_Farm.Controllers
         [HttpPost("batch")]
         public IActionResult CreateBatch(BatchOrderRequestDto request)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             var items = request?.Items;
             if (items is null || items.Count == 0)

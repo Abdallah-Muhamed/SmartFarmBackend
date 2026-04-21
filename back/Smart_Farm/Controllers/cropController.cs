@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Smart_Farm.DTOS;
@@ -19,34 +19,19 @@ namespace Smart_Farm.Controllers
             this.db = db;
         }
 
-        //list
+        // list mine (alias: GET api/crop and GET api/crop/me)
         [HttpGet]
-        public ActionResult getall()
-        {
-            var items = db.CROPs.Select(c => new CropResponseDto
-            {
-                Cid = c.Cid,
-                Notes = c.Notes,
-                Area_size = c.Area_size,
-                Start_date = c.Start_date,
-                Soil_type = c.Soil_type,
-                Current_Stage = c.Current_Stage,
-                Uid = c.Uid
-            }).ToList();
-            return Ok(items);
-        }
-
         [HttpGet("me")]
         public ActionResult GetMine()
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             var items = db.CROPs
                 .Where(c => c.Uid == uid)
                 .Select(c => new CropResponseDto
                 {
                     Cid = c.Cid,
+                    Pid = c.Pid,
                     Notes = c.Notes,
                     Area_size = c.Area_size,
                     Start_date = c.Start_date,
@@ -63,12 +48,15 @@ namespace Smart_Farm.Controllers
         [HttpGet("{id}")]
         public ActionResult getbyid(int id)
         {
+            var uid = UserClaims.RequireUid(User);
             CROP? b = db.CROPs.Find(id);
 
             if (b == null) return NotFound();
+            if (b.Uid != uid) return Forbid();
             return Ok(new CropResponseDto
             {
                 Cid = b.Cid,
+                Pid = b.Pid,
                 Notes = b.Notes,
                 Area_size = b.Area_size,
                 Start_date = b.Start_date,
@@ -84,8 +72,7 @@ namespace Smart_Farm.Controllers
         [HttpDelete("{id}")]
         public ActionResult Delete(int id)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             CROP? b = db.CROPs.Find(id);
             if (b == null) return NotFound();
@@ -100,13 +87,15 @@ namespace Smart_Farm.Controllers
         [HttpPost]
         public ActionResult post(CropRequestDto b)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             if (b == null) return BadRequest("Tasks is null");
             if (!ModelState.IsValid) return BadRequest();
+            if (!b.Pid.HasValue) return BadRequest("Pid (plant id) is required.");
+            if (!db.PLANTs.Any(p => p.Pid == b.Pid.Value)) return BadRequest("Plant not found.");
             var entity = new CROP
             {
+                Pid = b.Pid,
                 Notes = b.Notes,
                 Area_size = b.Area_size,
                 Start_date = b.Start_date,
@@ -119,6 +108,7 @@ namespace Smart_Farm.Controllers
             return CreatedAtAction(nameof(getbyid), new { id = entity.Cid }, new CropResponseDto
             {
                 Cid = entity.Cid,
+                Pid = entity.Pid,
                 Notes = entity.Notes,
                 Area_size = entity.Area_size,
                 Start_date = entity.Start_date,
@@ -133,13 +123,15 @@ namespace Smart_Farm.Controllers
         [HttpPut("{id}")]
         public ActionResult edit(CropRequestDto b, int id)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             if (b == null) return BadRequest("tasks is null");
             var entity = db.CROPs.Find(id);
             if (entity == null) return NotFound();
             if (entity.Uid != uid) return Forbid();
+            if (!b.Pid.HasValue) return BadRequest("Pid (plant id) is required.");
+            if (!db.PLANTs.Any(p => p.Pid == b.Pid.Value)) return BadRequest("Plant not found.");
+            entity.Pid = b.Pid;
             entity.Notes = b.Notes;
             entity.Area_size = b.Area_size;
             entity.Start_date = b.Start_date;
@@ -152,6 +144,11 @@ namespace Smart_Farm.Controllers
         [HttpGet("{cid}/products")]
         public IActionResult GetProductsByCrop(int cid)
         {
+            var uid = UserClaims.RequireUid(User);
+            var crop = db.CROPs.Find(cid);
+            if (crop is null) return NotFound();
+            if (crop.Uid != uid) return Forbid();
+
             var products = db.PRODUCTs
                 .Where(p => p.Cid == cid)
                 .ToList();
@@ -161,6 +158,11 @@ namespace Smart_Farm.Controllers
         [HttpGet("{cid}/irrigation-stages")]
         public IActionResult GetIrrigationStages(int cid)
         {
+            var uid = UserClaims.RequireUid(User);
+            var crop = db.CROPs.Find(cid);
+            if (crop is null) return NotFound();
+            if (crop.Uid != uid) return Forbid();
+
             var stages = db.IRRIGATION_STAGEs
                 .Where(i => i.Cid == cid)
                 .ToList();
@@ -170,6 +172,11 @@ namespace Smart_Farm.Controllers
         [HttpGet("{cid}/irrigations")]
         public IActionResult GetIrrigations(int cid)
         {
+            var uid = UserClaims.RequireUid(User);
+            var crop = db.CROPs.Find(cid);
+            if (crop is null) return NotFound();
+            if (crop.Uid != uid) return Forbid();
+
             var irrigations = db.IRRIGATIONs
                 .Where(i => i.Cid == cid)
                 .ToList();
@@ -179,6 +186,11 @@ namespace Smart_Farm.Controllers
         [HttpGet("{cid}/diagnosis")]
         public IActionResult GetDiagnosis(int cid)
         {
+            var uid = UserClaims.RequireUid(User);
+            var crop = db.CROPs.Find(cid);
+            if (crop is null) return NotFound();
+            if (crop.Uid != uid) return Forbid();
+
             var diagnosis = db.AI_Diagnoses
                 .Where(d => d.Cid == cid)
                 .ToList();
@@ -188,6 +200,11 @@ namespace Smart_Farm.Controllers
         [HttpGet("{cid}/fertilizers")]
         public IActionResult GetFertilizers(int cid)
         {
+            var uid = UserClaims.RequireUid(User);
+            var crop = db.CROPs.Find(cid);
+            if (crop is null) return NotFound();
+            if (crop.Uid != uid) return Forbid();
+
             var fertilizers = db.CROPs
                 .Where(c => c.Cid == cid)
                 .SelectMany(c => c.Frs)

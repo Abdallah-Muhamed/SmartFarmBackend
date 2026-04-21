@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -22,25 +22,10 @@ namespace Smart_Farm.Controllers
 
         //list
         [HttpGet]
-        public ActionResult getall()
-        {
-            var items = db.Tasks.Select(t => new TaskResponseDto
-            {
-                Task_id = t.Task_id,
-                Date = t.Date,
-                Label = t.Label,
-                Content = t.Content,
-                State = t.State,
-                Uid = t.Uid
-            }).ToList();
-            return Ok(items);
-        }
-
         [HttpGet("me")]
         public ActionResult GetMine()
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             var items = db.Tasks
                 .Where(t => t.Uid == uid)
@@ -62,9 +47,11 @@ namespace Smart_Farm.Controllers
         [HttpGet("{id}")]
         public ActionResult getbyid(int id)
         {
+            var uid = UserClaims.RequireUid(User);
             Models.Task? b = db.Tasks.Find(id);
 
             if (b == null) return NotFound();
+            if (b.Uid != uid) return Forbid();
             return Ok(new TaskResponseDto
             {
                 Task_id = b.Task_id,
@@ -82,8 +69,7 @@ namespace Smart_Farm.Controllers
         [HttpDelete("{id}")]
         public ActionResult Delete(int id)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             Models.Task? b = db.Tasks.Find(id);
             if (b == null) return NotFound();
@@ -98,8 +84,7 @@ namespace Smart_Farm.Controllers
         [HttpPost]
         public ActionResult post(TaskRequestDto b)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             if (b == null) return BadRequest("Tasks is null");
             if (!ModelState.IsValid) return BadRequest();
@@ -128,8 +113,7 @@ namespace Smart_Farm.Controllers
         [HttpPut("{id}")]
         public ActionResult edit(TaskRequestDto b, int id)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             if (b == null) return BadRequest("tasks is null");
             var entity = db.Tasks.Find(id);

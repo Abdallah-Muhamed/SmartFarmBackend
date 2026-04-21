@@ -37,8 +37,7 @@ public class reviewController(farContext db) : ControllerBase
     [HttpPost]
     public IActionResult Create(ReviewRequestDto request)
     {
-        if (!UserClaims.TryGetUid(User, out var uid))
-            return Unauthorized();
+        var uid = UserClaims.RequireUid(User);
 
         if (request is null)
             return BadRequest();

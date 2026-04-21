@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Smart_Farm.DTOS;
@@ -24,9 +24,11 @@ namespace Smart_Farm.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
+            var uid = UserClaims.RequireUid(User);
             var irrigations = db.IRRIGATIONs
                 .Include(i => i.CidNavigation)
                 .Include(i => i.SisNavigation)
+                .Where(i => i.CidNavigation != null && i.CidNavigation.Uid == uid)
                 .Select(i => new IrrigationDTO
                 {
                     Iid = i.Iid,
@@ -49,10 +51,11 @@ namespace Smart_Farm.Controllers
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
+            var uid = UserClaims.RequireUid(User);
             var irrigation = db.IRRIGATIONs
                 .Include(i => i.CidNavigation)
                 .Include(i => i.SisNavigation)
-                .Where(i => i.Iid == id)
+                .Where(i => i.Iid == id && i.CidNavigation != null && i.CidNavigation.Uid == uid)
                 .Select(i => new IrrigationDTO
                 {
                     Iid = i.Iid,
@@ -78,8 +81,7 @@ namespace Smart_Farm.Controllers
         [HttpGet("crop/{cid}")]
         public IActionResult GetByCrop(int cid)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             var auth = CropAuthorization.EnsureCropOwnedByUser(db, cid, uid);
             if (auth is not null) return auth;
@@ -108,8 +110,9 @@ namespace Smart_Farm.Controllers
         [HttpGet("stage/{sid}")]
         public IActionResult GetByStage(int sid)
         {
+            var uid = UserClaims.RequireUid(User);
             var irrigations = db.IRRIGATIONs
-                .Where(i => i.Sis == sid)
+                .Where(i => i.Sis == sid && i.CidNavigation != null && i.CidNavigation.Uid == uid)
                 .Select(i => new IrrigationDTO
                 {
                     Iid = i.Iid,
@@ -134,8 +137,7 @@ namespace Smart_Farm.Controllers
             IRRIGATION? b = db.IRRIGATIONs.Find(id);
             if (b == null) return NotFound();
 
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             if (b.Cid is null)
                 return BadRequest("Irrigation is missing crop id.");
@@ -156,8 +158,7 @@ namespace Smart_Farm.Controllers
             if (b == null) return BadRequest("irrigations is null");
             if (!ModelState.IsValid) return BadRequest();
 
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             if (b.Cid is null)
                 return BadRequest("cid is required.");
@@ -189,8 +190,7 @@ namespace Smart_Farm.Controllers
             var entity = db.IRRIGATIONs.Find(id);
             if (entity == null) return NotFound();
 
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             var cid = b.Cid ?? entity.Cid;
             if (cid is null)

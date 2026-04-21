@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Smart_Farm.DTOS;
@@ -24,8 +24,10 @@ namespace Smart_Farm.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
+            var uid = UserClaims.RequireUid(User);
             var stages = db.IRRIGATION_STAGEs
                 .Include(s => s.CidNavigation)
+                .Where(s => s.CidNavigation != null && s.CidNavigation.Uid == uid)
                 .Select(s => new IrrigationStageDTO
                 {
                     Sid = s.Sid,
@@ -44,9 +46,10 @@ namespace Smart_Farm.Controllers
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
+            var uid = UserClaims.RequireUid(User);
             var stage = db.IRRIGATION_STAGEs
                 .Include(s => s.CidNavigation)
-                .Where(s => s.Sid == id)
+                .Where(s => s.Sid == id && s.CidNavigation != null && s.CidNavigation.Uid == uid)
                 .Select(s => new IrrigationStageDTO
                 {
                     Sid = s.Sid,
@@ -68,8 +71,7 @@ namespace Smart_Farm.Controllers
         [HttpGet("crop/{cid}")]
         public IActionResult GetStagesByCrop(int cid)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             var auth = CropAuthorization.EnsureCropOwnedByUser(db, cid, uid);
             if (auth is not null) return auth;
@@ -95,8 +97,7 @@ namespace Smart_Farm.Controllers
             IRRIGATION_STAGE? b = db.IRRIGATION_STAGEs.Find(id);
             if (b == null) return NotFound();
 
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             if (b.Cid is null)
                 return BadRequest("Stage is missing crop id.");
@@ -117,8 +118,7 @@ namespace Smart_Farm.Controllers
             if (b == null) return BadRequest("stages is null");
             if (!ModelState.IsValid) return BadRequest();
 
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             if (b.Cid is null)
                 return BadRequest("cid is required.");
@@ -147,8 +147,7 @@ namespace Smart_Farm.Controllers
             var entity = db.IRRIGATION_STAGEs.Find(id);
             if (entity == null) return NotFound();
 
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             var cid = b.Cid ?? entity.Cid;
             if (cid is null)

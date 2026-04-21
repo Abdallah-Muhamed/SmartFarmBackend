@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Smart_Farm.DTOS;
@@ -79,8 +79,7 @@ namespace Smart_Farm.Controllers
         [HttpGet("me")]
         public ActionResult GetMine()
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             var items = db.PRODUCTs
                 .AsNoTracking()
@@ -142,8 +141,7 @@ namespace Smart_Farm.Controllers
         [HttpDelete("{id}")]
         public ActionResult Delete(int id)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             PRODUCT? b = db.PRODUCTs.Find(id);
             if (b == null) return NotFound();
@@ -158,8 +156,7 @@ namespace Smart_Farm.Controllers
         [HttpPost]
         public ActionResult post(ProductRequestDto b)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             if (b == null) return BadRequest("products is null");
             if (!ModelState.IsValid) return BadRequest();
@@ -208,8 +205,7 @@ namespace Smart_Farm.Controllers
         [HttpPut("{id}")]
         public ActionResult edit(ProductRequestDto b, int id)
         {
-            if (!UserClaims.TryGetUid(User, out var uid))
-                return Unauthorized();
+            var uid = UserClaims.RequireUid(User);
 
             if (b == null) return BadRequest("products is null");
             var entity = db.PRODUCTs.Find(id);

@@ -172,6 +172,21 @@ int? FindNextAvailablePort(int startPort, int attempts = 30)
 
 app.Use(async (context, next) =>
 {
+    try
+    {
+        await next();
+    }
+    catch (UnauthorizedAccessException)
+    {
+        if (!context.Response.HasStarted)
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        }
+    }
+});
+
+app.Use(async (context, next) =>
+{
     var correlationId = context.Request.Headers.TryGetValue("X-Correlation-Id", out var existing)
         && !string.IsNullOrWhiteSpace(existing)
         ? existing.ToString()

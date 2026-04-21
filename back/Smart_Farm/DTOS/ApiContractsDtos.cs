@@ -2,6 +2,7 @@ namespace Smart_Farm.DTOS;
 
 public class CropRequestDto
 {
+    public int? Pid { get; set; }
     public string? Notes { get; set; }
     public decimal? Area_size { get; set; }
     public DateOnly? Start_date { get; set; }
@@ -12,6 +13,7 @@ public class CropRequestDto
 public class CropResponseDto
 {
     public int Cid { get; set; }
+    public int? Pid { get; set; }
     public string? Notes { get; set; }
     public decimal? Area_size { get; set; }
     public DateOnly? Start_date { get; set; }

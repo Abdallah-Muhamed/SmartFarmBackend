@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Smart_Farm.Models;
 
@@ -11,9 +12,11 @@ using Smart_Farm.Models;
 namespace Smart_Farm.Migrations
 {
     [DbContext(typeof(farContext))]
-    partial class farContextModelSnapshot : ModelSnapshot
+    [Migration("20260421202324_AddCropPlantFk")]
+    partial class AddCropPlantFk
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -285,6 +288,31 @@ namespace Smart_Farm.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("Smart_Farm.Models.BELONG_TO", b =>
+                {
+                    b.Property<int>("Cid")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Pid")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly?>("Harvest_Time")
+                        .HasColumnType("date");
+
+                    b.Property<int?>("Plant_count")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly?>("Sow_Time")
+                        .HasColumnType("date");
+
+                    b.HasKey("Cid", "Pid")
+                        .HasName("PK__BELONG_T__5DA8DDF25F4CF032");
+
+                    b.HasIndex("Pid");
+
+                    b.ToTable("BELONG_TO");
                 });
 
             modelBuilder.Entity("Smart_Farm.Models.COMPATIBILITY", b =>
@@ -905,6 +933,25 @@ namespace Smart_Farm.Migrations
                     b.Navigation("DidNavigation");
                 });
 
+            modelBuilder.Entity("Smart_Farm.Models.BELONG_TO", b =>
+                {
+                    b.HasOne("Smart_Farm.Models.CROP", "CidNavigation")
+                        .WithMany("BELONG_TOs")
+                        .HasForeignKey("Cid")
+                        .IsRequired()
+                        .HasConstraintName("FK__BELONG_TO__Cid__4D94879B");
+
+                    b.HasOne("Smart_Farm.Models.PLANT", "PidNavigation")
+                        .WithMany("BELONG_TOs")
+                        .HasForeignKey("Pid")
+                        .IsRequired()
+                        .HasConstraintName("FK__BELONG_TO__Pid__4E88ABD4");
+
+                    b.Navigation("CidNavigation");
+
+                    b.Navigation("PidNavigation");
+                });
+
             modelBuilder.Entity("Smart_Farm.Models.COMPATIBILITY", b =>
                 {
                     b.HasOne("Smart_Farm.Models.FERTILIZER", "Fr")
@@ -1071,6 +1118,8 @@ namespace Smart_Farm.Migrations
                 {
                     b.Navigation("AI_Diagnoses");
 
+                    b.Navigation("BELONG_TOs");
+
                     b.Navigation("IRRIGATION_STAGEs");
 
                     b.Navigation("IRRIGATIONs");
@@ -1095,6 +1144,8 @@ namespace Smart_Farm.Migrations
 
             modelBuilder.Entity("Smart_Farm.Models.PLANT", b =>
                 {
+                    b.Navigation("BELONG_TOs");
+
                     b.Navigation("COMPATIBILITies");
 
                     b.Navigation("CROPs");
