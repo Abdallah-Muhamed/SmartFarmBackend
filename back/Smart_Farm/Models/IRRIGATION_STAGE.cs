@@ -30,4 +30,9 @@ public partial class IRRIGATION_STAGE
 
     [InverseProperty("SisNavigation")]
     public virtual ICollection<IRRIGATION> IRRIGATIONs { get; set; } = new List<IRRIGATION>();
+    public int? PSid { get; set; }
+    public int? Duration_days { get; set; }
+
+    [ForeignKey("PSid")]
+    public virtual PLANT_STAGE PSidNavigation { get; set; }
 }

@@ -39,4 +39,8 @@ public partial class IRRIGATION
     [ForeignKey("Sis")]
     [InverseProperty("IRRIGATIONs")]
     public virtual IRRIGATION_STAGE SisNavigation { get; set; }
+    public int? PTid { get; set; }
+
+    [ForeignKey("PTid")]
+    public virtual PLANT_IRRIGATION_TEMPLATE PTidNavigation { get; set; }
 }

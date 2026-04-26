@@ -53,4 +53,9 @@ public partial class PLANT
 
     [InverseProperty("PidNavigation")]
     public virtual ICollection<CROP> CROPs { get; set; } = new List<CROP>();
+    [InverseProperty("PidNavigation")]
+    public virtual ICollection<PLANT_STAGE> PLANT_STAGEs { get; set; } = new List<PLANT_STAGE>();
+
+    [InverseProperty("PidNavigation")]
+    public virtual ICollection<PLANT_IRRIGATION_TEMPLATE> PLANT_IRRIGATION_TEMPLATEs { get; set; } = new List<PLANT_IRRIGATION_TEMPLATE>();
 }

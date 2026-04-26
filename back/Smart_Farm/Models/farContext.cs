@@ -50,10 +50,12 @@ public partial class farContext : IdentityDbContext<AppUser, IdentityRole<int>, 
     public virtual DbSet<USER> USERs { get; set; }
 
     public virtual DbSet<USER_PHONE> USER_PHONEs { get; set; }
+    public virtual DbSet<PLANT_STAGE> PLANT_STAGEs { get; set; }
+    public virtual DbSet<PLANT_IRRIGATION_TEMPLATE> PLANT_IRRIGATION_TEMPLATEs { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Data Source=.;Initial Catalog=Smart_Farm;Integrated Security=True");
+    //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+    //        => optionsBuilder.UseSqlServer("Data Source=.;Initial Catalog=Smart_Farm;Integrated Security=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
