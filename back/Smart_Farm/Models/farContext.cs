@@ -52,6 +52,8 @@ public partial class farContext : IdentityDbContext<AppUser, IdentityRole<int>, 
     public virtual DbSet<USER_PHONE> USER_PHONEs { get; set; }
     public virtual DbSet<PLANT_STAGE> PLANT_STAGEs { get; set; }
     public virtual DbSet<PLANT_IRRIGATION_TEMPLATE> PLANT_IRRIGATION_TEMPLATEs { get; set; }
+    public virtual DbSet<CROP_WATER_BALANCE_LOG> CROP_WATER_BALANCE_LOGs { get; set; }
+    public virtual DbSet<FARM> FARMs { get; set; }
 
     //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.

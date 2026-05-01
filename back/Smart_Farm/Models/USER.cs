@@ -45,6 +45,9 @@ public partial class USER
     public virtual ICollection<CROP> CROPs { get; set; } = new List<CROP>();
 
     [InverseProperty("UidNavigation")]
+    public virtual ICollection<FARM> FARMs { get; set; } = new List<FARM>();
+
+    [InverseProperty("UidNavigation")]
     public virtual ICollection<ORDER> ORDERs { get; set; } = new List<ORDER>();
 
     [InverseProperty("UidNavigation")]

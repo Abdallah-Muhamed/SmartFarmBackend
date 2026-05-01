@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Smart_Farm.Models;
 
@@ -11,9 +12,11 @@ using Smart_Farm.Models;
 namespace Smart_Farm.Migrations
 {
     [DbContext(typeof(farContext))]
-    partial class farContextModelSnapshot : ModelSnapshot
+    [Migration("20260429013135_FixKnowledgeLayerLinking")]
+    partial class FixKnowledgeLayerLinking
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -313,15 +316,6 @@ namespace Smart_Farm.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<decimal?>("Depletion_mm")
-                        .HasColumnType("decimal(8, 2)");
-
-                    b.Property<int?>("FarmId")
-                        .HasColumnType("int");
-
-                    b.Property<DateOnly?>("LastBalanceDate")
-                        .HasColumnType("date");
-
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 
@@ -341,64 +335,11 @@ namespace Smart_Farm.Migrations
                     b.HasKey("Cid")
                         .HasName("PK__CROP__C1FFD8616FF697CD");
 
-                    b.HasIndex("FarmId");
-
                     b.HasIndex("Pid");
 
                     b.HasIndex("Uid");
 
                     b.ToTable("CROP");
-                });
-
-            modelBuilder.Entity("Smart_Farm.Models.CROP_WATER_BALANCE_LOG", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Cid")
-                        .HasColumnType("int");
-
-                    b.Property<DateOnly>("Date")
-                        .HasColumnType("date");
-
-                    b.Property<decimal?>("DeplEnd_mm")
-                        .HasColumnType("decimal(8, 2)");
-
-                    b.Property<decimal?>("DeplStart_mm")
-                        .HasColumnType("decimal(8, 2)");
-
-                    b.Property<decimal?>("ET0_mm")
-                        .HasColumnType("decimal(6, 2)");
-
-                    b.Property<decimal?>("ETc_mm")
-                        .HasColumnType("decimal(6, 2)");
-
-                    b.Property<decimal?>("EffRain_mm")
-                        .HasColumnType("decimal(6, 2)");
-
-                    b.Property<decimal?>("Irrig_mm")
-                        .HasColumnType("decimal(6, 2)");
-
-                    b.Property<decimal?>("Kc")
-                        .HasColumnType("decimal(4, 2)");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal?>("RAW_mm")
-                        .HasColumnType("decimal(8, 2)");
-
-                    b.Property<decimal?>("TAW_mm")
-                        .HasColumnType("decimal(8, 2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Cid");
-
-                    b.ToTable("CROP_WATER_BALANCE_LOG");
                 });
 
             modelBuilder.Entity("Smart_Farm.Models.Disease", b =>
@@ -429,60 +370,6 @@ namespace Smart_Farm.Migrations
                         .HasName("PK__Disease__C03122188275DDE5");
 
                     b.ToTable("Disease");
-                });
-
-            modelBuilder.Entity("Smart_Farm.Models.FARM", b =>
-                {
-                    b.Property<int>("FarmId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FarmId"));
-
-                    b.Property<string>("Address_line")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<decimal?>("Area_size")
-                        .HasColumnType("decimal(10, 2)");
-
-                    b.Property<string>("City")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Default_Soil_type")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Governorate")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<decimal?>("Latitude")
-                        .HasColumnType("decimal(10, 6)");
-
-                    b.Property<decimal?>("Longitude")
-                        .HasColumnType("decimal(10, 6)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Uid")
-                        .HasColumnType("int");
-
-                    b.HasKey("FarmId");
-
-                    b.HasIndex("Uid");
-
-                    b.ToTable("FARM");
                 });
 
             modelBuilder.Entity("Smart_Farm.Models.FERTILIZER", b =>
@@ -748,9 +635,6 @@ namespace Smart_Farm.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<decimal?>("Kc")
-                        .HasColumnType("decimal(4, 2)");
-
                     b.Property<int?>("PSid")
                         .HasColumnType("int");
 
@@ -759,12 +643,6 @@ namespace Smart_Farm.Migrations
 
                     b.Property<decimal?>("Water_amount")
                         .HasColumnType("decimal(10, 2)");
-
-                    b.Property<decimal?>("Zr_m")
-                        .HasColumnType("decimal(4, 2)");
-
-                    b.Property<decimal?>("p_fraction")
-                        .HasColumnType("decimal(4, 2)");
 
                     b.HasKey("PTid");
 
@@ -1108,10 +986,6 @@ namespace Smart_Farm.Migrations
 
             modelBuilder.Entity("Smart_Farm.Models.CROP", b =>
                 {
-                    b.HasOne("Smart_Farm.Models.FARM", "FarmNavigation")
-                        .WithMany("CROPs")
-                        .HasForeignKey("FarmId");
-
                     b.HasOne("Smart_Farm.Models.PLANT", "PidNavigation")
                         .WithMany("CROPs")
                         .HasForeignKey("Pid");
@@ -1121,31 +995,7 @@ namespace Smart_Farm.Migrations
                         .HasForeignKey("Uid")
                         .HasConstraintName("FK__CROP__Uid__4316F928");
 
-                    b.Navigation("FarmNavigation");
-
                     b.Navigation("PidNavigation");
-
-                    b.Navigation("UidNavigation");
-                });
-
-            modelBuilder.Entity("Smart_Farm.Models.CROP_WATER_BALANCE_LOG", b =>
-                {
-                    b.HasOne("Smart_Farm.Models.CROP", "CidNavigation")
-                        .WithMany("WaterBalanceLogs")
-                        .HasForeignKey("Cid")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CidNavigation");
-                });
-
-            modelBuilder.Entity("Smart_Farm.Models.FARM", b =>
-                {
-                    b.HasOne("Smart_Farm.Models.USER", "UidNavigation")
-                        .WithMany("FARMs")
-                        .HasForeignKey("Uid")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("UidNavigation");
                 });
@@ -1311,18 +1161,11 @@ namespace Smart_Farm.Migrations
                     b.Navigation("IRRIGATIONs");
 
                     b.Navigation("PRODUCTs");
-
-                    b.Navigation("WaterBalanceLogs");
                 });
 
             modelBuilder.Entity("Smart_Farm.Models.Disease", b =>
                 {
                     b.Navigation("AI_Diagnoses");
-                });
-
-            modelBuilder.Entity("Smart_Farm.Models.FARM", b =>
-                {
-                    b.Navigation("CROPs");
                 });
 
             modelBuilder.Entity("Smart_Farm.Models.FERTILIZER", b =>
@@ -1373,8 +1216,6 @@ namespace Smart_Farm.Migrations
             modelBuilder.Entity("Smart_Farm.Models.USER", b =>
                 {
                     b.Navigation("CROPs");
-
-                    b.Navigation("FARMs");
 
                     b.Navigation("ORDERs");
 

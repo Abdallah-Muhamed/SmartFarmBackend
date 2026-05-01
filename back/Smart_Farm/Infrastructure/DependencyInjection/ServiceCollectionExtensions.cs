@@ -10,6 +10,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApplicationLayer(this IServiceCollection services)
     {
         services.AddScoped<IAIDiagnosisService, AIDiagnosisService>();
+        services.AddScoped<IWaterBalanceService, WaterBalanceService>();
         return services;
     }
 
@@ -18,6 +19,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAIDiagnosisRepository, AIDiagnosisRepository>();
         services.AddScoped<IPlantDiseaseIdentifier, PlantNetDiseaseIdentifier>();
         services.AddScoped<IAgriculturalReportGenerator, GeminiAgriculturalReportGenerator>();
+        services.AddHttpClient("OpenMeteo");
+        services.AddScoped<IWeatherProvider, OpenMeteoWeatherProvider>();
         return services;
     }
 }

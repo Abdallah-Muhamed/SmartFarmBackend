@@ -32,6 +32,22 @@ public partial class CROP
 
     public int? Uid { get; set; }
 
+    public int? FarmId { get; set; }
+
+    [ForeignKey("FarmId")]
+    [InverseProperty("CROPs")]
+    public virtual FARM FarmNavigation { get; set; }
+
+    // Running soil-water depletion (mm). 0 = field capacity. Updated by the water-balance service.
+    [Column(TypeName = "decimal(8, 2)")]
+    public decimal? Depletion_mm { get; set; }
+
+    // Date of the last successful water-balance computation for this crop.
+    public DateOnly? LastBalanceDate { get; set; }
+
+    [InverseProperty("CidNavigation")]
+    public virtual ICollection<CROP_WATER_BALANCE_LOG> WaterBalanceLogs { get; set; } = new List<CROP_WATER_BALANCE_LOG>();
+
     [InverseProperty("CidNavigation")]
     public virtual ICollection<AI_Diagnosis> AI_Diagnoses { get; set; } = new List<AI_Diagnosis>();
 

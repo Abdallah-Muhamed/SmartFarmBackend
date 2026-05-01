@@ -27,6 +27,18 @@ public partial class PLANT_IRRIGATION_TEMPLATE
     [Column(TypeName = "nvarchar(max)")]
     public string Description { get; set; }
 
+    // Crop coefficient for this stage (FAO-56). 0.30–1.20 typical.
+    [Column(TypeName = "decimal(4, 2)")]
+    public decimal? Kc { get; set; }
+
+    // Allowable depletion fraction p (0.30–0.70). Used to compute RAW = p × TAW.
+    [Column(TypeName = "decimal(4, 2)")]
+    public decimal? p_fraction { get; set; }
+
+    // Effective root depth for the stage, in metres.
+    [Column(TypeName = "decimal(4, 2)")]
+    public decimal? Zr_m { get; set; }
+
     [ForeignKey("PSid")]
     [InverseProperty("PLANT_IRRIGATION_TEMPLATEs")]
     public virtual PLANT_STAGE PSidNavigation { get; set; }

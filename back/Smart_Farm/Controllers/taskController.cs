@@ -22,7 +22,6 @@ namespace Smart_Farm.Controllers
 
         //list
         [HttpGet]
-        [HttpGet("me")]
         public ActionResult GetMine()
         {
             var uid = UserClaims.RequireUid(User);

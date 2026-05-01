@@ -3,10 +3,10 @@ namespace Smart_Farm.DTOS;
 public class CropRequestDto
 {
     public int? Pid { get; set; }
+    public int? FarmId { get; set; }
     public string? Notes { get; set; }
     public decimal? Area_size { get; set; }
     public DateOnly? Start_date { get; set; }
-    public string? Soil_type { get; set; }
     public string? Current_Stage { get; set; }
 }
 
@@ -14,6 +14,7 @@ public class CropResponseDto
 {
     public int Cid { get; set; }
     public int? Pid { get; set; }
+    public int? FarmId { get; set; }
     public string? Notes { get; set; }
     public decimal? Area_size { get; set; }
     public DateOnly? Start_date { get; set; }
