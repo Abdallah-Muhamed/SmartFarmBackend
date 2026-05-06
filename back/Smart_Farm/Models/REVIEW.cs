@@ -14,6 +14,7 @@ public partial class REVIEW
 
     public int? Uid { get; set; }
 
+    [Range(1, 5)]
     public int? Rating { get; set; }
 
     [Column(TypeName = "nvarchar(max)")]

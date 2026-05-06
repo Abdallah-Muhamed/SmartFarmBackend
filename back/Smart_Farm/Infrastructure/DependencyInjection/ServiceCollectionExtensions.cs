@@ -20,6 +20,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPlantDiseaseIdentifier, PlantNetDiseaseIdentifier>();
         services.AddScoped<IAgriculturalReportGenerator, GeminiAgriculturalReportGenerator>();
         services.AddHttpClient("OpenMeteo");
+        services.AddHttpClient("Nominatim");
+        services.AddScoped<ILocationGeocodingService, NominatimLocationGeocodingService>();
         services.AddScoped<IWeatherProvider, OpenMeteoWeatherProvider>();
         return services;
     }

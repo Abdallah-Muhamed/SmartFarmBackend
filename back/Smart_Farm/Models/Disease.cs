@@ -14,16 +14,16 @@ public partial class Disease
     [Key]
     public int Did { get; set; }
 
-    [StringLength(100)]
+    [StringLength(200)]
     public string Name { get; set; }
 
-    [StringLength(100)]
-    public string Nause { get; set; }
+    [Column(TypeName = "nvarchar(max)")]
+    public string Cause { get; set; }
 
-    [StringLength(100)]
+    [Column(TypeName = "nvarchar(max)")]
     public string Symptoms { get; set; }
 
-    [StringLength(100)]
+    [Column(TypeName = "nvarchar(max)")]
     public string Treatment { get; set; }
 
     [InverseProperty("DidNavigation")]

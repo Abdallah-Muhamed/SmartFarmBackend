@@ -28,7 +28,7 @@ namespace Smart_Farm.Controllers
                 {
                     Did = d.Did,
                     Name = d.Name,
-                    Nause = d.Nause,
+                    Cause = d.Cause,
                     Symptoms = d.Symptoms,
                     Treatment = d.Treatment
                 })
@@ -47,7 +47,7 @@ namespace Smart_Farm.Controllers
                 {
                     Did = d.Did,
                     Name = d.Name,
-                    Nause = d.Nause,
+                    Cause = d.Cause,
                     Symptoms = d.Symptoms,
                     Treatment = d.Treatment
                 })
@@ -66,7 +66,7 @@ namespace Smart_Farm.Controllers
             var disease = new Disease
             {
                 Name = dto.Name,
-                Nause = dto.Nause,
+                Cause = dto.Cause,
                 Symptoms = dto.Symptoms,
                 Treatment = dto.Treatment
             };

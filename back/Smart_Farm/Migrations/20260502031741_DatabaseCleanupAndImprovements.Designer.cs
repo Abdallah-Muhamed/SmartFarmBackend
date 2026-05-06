@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Smart_Farm.Models;
 
@@ -11,9 +12,11 @@ using Smart_Farm.Models;
 namespace Smart_Farm.Migrations
 {
     [DbContext(typeof(farContext))]
-    partial class farContextModelSnapshot : ModelSnapshot
+    [Migration("20260502031741_DatabaseCleanupAndImprovements")]
+    partial class DatabaseCleanupAndImprovements
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -95,6 +95,8 @@ public partial class farContext : IdentityDbContext<AppUser, IdentityRole<int>, 
             entity.HasKey(e => e.Cid).HasName("PK__CROP__C1FFD8616FF697CD");
 
             entity.HasOne(d => d.UidNavigation).WithMany(p => p.CROPs).HasConstraintName("FK__CROP__Uid__4316F928");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
         });
 
         modelBuilder.Entity<Disease>(entity =>
@@ -160,6 +162,9 @@ public partial class farContext : IdentityDbContext<AppUser, IdentityRole<int>, 
             entity.HasOne(d => d.PidNavigation).WithMany(p => p.ORDERs).HasConstraintName("FK__ORDERS__Pid__49C3F6B7");
 
             entity.HasOne(d => d.UidNavigation).WithMany(p => p.ORDERs).HasConstraintName("FK__ORDERS__Uid__4AB81AF0");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+            entity.HasIndex(e => e.Uid);
         });
 
         modelBuilder.Entity<PLANT>(entity =>
@@ -174,6 +179,9 @@ public partial class farContext : IdentityDbContext<AppUser, IdentityRole<int>, 
             entity.HasOne(d => d.CidNavigation).WithMany(p => p.PRODUCTs).HasConstraintName("FK__PRODUCT__Cid__46E78A0C");
 
             entity.HasOne(d => d.UidNavigation).WithMany(p => p.PRODUCTs).HasConstraintName("FK__PRODUCT__Uid__45F365D3");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+            entity.HasIndex(e => e.Category);
         });
 
         modelBuilder.Entity<SEASON>(entity =>
@@ -186,6 +194,13 @@ public partial class farContext : IdentityDbContext<AppUser, IdentityRole<int>, 
             entity.HasKey(e => e.Task_id).HasName("PK__Task__716846B5F30205F9");
 
             entity.HasOne(d => d.UidNavigation).WithMany(p => p.Tasks).HasConstraintName("FK__Task__Uid__3C69FB99");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+        });
+
+        modelBuilder.Entity<REVIEW>(entity =>
+        {
+            entity.HasIndex(e => e.Pid);
         });
 
         modelBuilder.Entity<USER>(entity =>

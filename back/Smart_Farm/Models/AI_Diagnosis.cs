@@ -13,8 +13,8 @@ public partial class AI_Diagnosis
 {
     [Key]
     public int ADid { get; set; }
-    public DateOnly? DiagnosisDate { get; set; }
-    [StringLength(100)]
+    public DateTime? DiagnosisDate { get; set; }
+    [Column(TypeName = "nvarchar(max)")]
     public string Result { get; set; }
     public int? Did { get; set; }
     public int? Cid { get; set; }

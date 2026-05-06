@@ -38,9 +38,6 @@ public partial class USER
     [StringLength(50)]
     public string Role { get; set; }
 
-    [StringLength(64)]
-    public string PasswordHashed { get; set; }
-
     [InverseProperty("UidNavigation")]
     public virtual ICollection<CROP> CROPs { get; set; } = new List<CROP>();
 

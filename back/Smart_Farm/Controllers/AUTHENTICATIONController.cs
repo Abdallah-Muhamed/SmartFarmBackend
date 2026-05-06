@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Smart_Farm.Application.Abstractions;
 using Smart_Farm.DTOS;
 using Smart_Farm.Models;
 using System.IdentityModel.Tokens.Jwt;
@@ -17,7 +18,8 @@ public class AuthenticationController(
     farContext db,
     IConfiguration config,
     UserManager<AppUser> userManager,
-    RoleManager<IdentityRole<int>> roleManager) : ControllerBase
+    RoleManager<IdentityRole<int>> roleManager,
+    ILocationGeocodingService geocodingService) : ControllerBase
 {
     private readonly IConfiguration _config = config ?? throw new ArgumentNullException(nameof(config));
 
@@ -29,18 +31,40 @@ public class AuthenticationController(
         if (identityExists is not null)
             return Conflict("Email is already registered.");
 
+        // Auto-geocode location from city + address if lat/lng not provided
+        decimal? lat = (dto.Latitude == 0 || dto.Latitude is null) ? null : dto.Latitude;
+        decimal? lng = (dto.Longitude == 0 || dto.Longitude is null) ? null : dto.Longitude;
+        string? cityName = dto.City_name;
+        string? addressLine = dto.Address_line;
+
+        if (lat is null || lng is null)
+        {
+            var query = string.Join(" ", new[] { dto.City_name, dto.Address_line }
+                .Where(s => !string.IsNullOrWhiteSpace(s)));
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                var location = await geocodingService.ForwardAsync(query, cancellationToken);
+                if (location is not null)
+                {
+                    lat = (decimal?)location.Latitude;
+                    lng = (decimal?)location.Longitude;
+                    if (string.IsNullOrWhiteSpace(cityName)) cityName = location.City ?? location.Governorate;
+                    if (string.IsNullOrWhiteSpace(addressLine)) addressLine = location.DisplayName;
+                }
+            }
+        }
+
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         var domainUser = new USER
         {
             First_name = dto.First_name,
             Last_name = dto.Last_name,
             Email = dto.Email,
-            Address_line = dto.Address_line,
-            City_name = dto.City_name,
-            Latitude = dto.Latitude,
-            Longitude = dto.Longitude,
-            Role = dto.Role,
-            PasswordHashed = "IDENTITY_MANAGED"
+            Address_line = addressLine ?? dto.Address_line,
+            City_name = cityName ?? dto.City_name,
+            Latitude = lat,
+            Longitude = lng,
+            Role = dto.Role
         };
 
         db.USERs.Add(domainUser);

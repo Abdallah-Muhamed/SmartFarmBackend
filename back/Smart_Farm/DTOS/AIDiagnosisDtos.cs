@@ -3,7 +3,7 @@ namespace Smart_Farm.DTOS;
 public class AIDiagnosisResponseDto
 {
     public int ADid { get; set; }
-    public DateOnly? DiagnosisDate { get; set; }
+    public DateTime? DiagnosisDate { get; set; }
     public required string Result { get; set; }
     public int? Did { get; set; }
     public int? Cid { get; set; }
@@ -13,7 +13,7 @@ public class AIDiagnosisResponseDto
 
 public class UpdateAIDiagnosisRequestDto
 {
-    public DateOnly? DiagnosisDate { get; set; }
+    public DateTime? DiagnosisDate { get; set; }
     public required string Result { get; set; }
     public int? Did { get; set; }
     public int? Cid { get; set; }

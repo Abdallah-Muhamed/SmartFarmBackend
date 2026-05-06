@@ -99,7 +99,8 @@ namespace Smart_Farm.Controllers
                 Payment_method = b.Payment_method,
                 Promo_code = b.Promo_code,
                 Discount_amount = b.Discount_amount,
-                Order_notes = b.Order_notes
+                Order_notes = b.Order_notes,
+                CreatedAt = DateTime.UtcNow
             };
             db.ORDERs.Add(entity);
             db.SaveChanges();
@@ -225,7 +226,8 @@ namespace Smart_Farm.Controllers
                 Payment_method = request?.Payment_method,
                 Promo_code = request?.Promo_code,
                 Discount_amount = request?.Discount_amount,
-                Order_notes = request?.Order_notes
+                Order_notes = request?.Order_notes,
+                CreatedAt = DateTime.UtcNow
             }).ToList();
 
             db.ORDERs.AddRange(entities);

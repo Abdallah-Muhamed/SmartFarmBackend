@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Smart_Farm.Application.Abstractions;
 using Smart_Farm.DTOS;
 using Smart_Farm.Infrastructure.Security;
 using Smart_Farm.Models;
+using Task = System.Threading.Tasks.Task;
 
 namespace Smart_Farm.Controllers;
 
@@ -13,10 +15,12 @@ namespace Smart_Farm.Controllers;
 public class FarmController : ControllerBase
 {
     private readonly farContext _db;
+    private readonly ILocationGeocodingService _locationGeocodingService;
 
-    public FarmController(farContext db)
+    public FarmController(farContext db, ILocationGeocodingService locationGeocodingService)
     {
         _db = db;
+        _locationGeocodingService = locationGeocodingService;
     }
 
     private static FarmResponseDto ToDto(FARM f, int cropCount) => new()
@@ -35,6 +39,44 @@ public class FarmController : ControllerBase
         Uid = f.Uid,
         CropCount = cropCount
     };
+
+    private async Task ApplyLocationAsync(FARM farm, CreateFarmDto dto, CancellationToken ct)
+    {
+        LocationLookupResult? lookup = null;
+
+        if (!string.IsNullOrWhiteSpace(dto.LocationQuery))
+        {
+            lookup = await _locationGeocodingService.ForwardAsync(dto.LocationQuery!, ct);
+        }
+        else if (dto.Latitude.HasValue && dto.Longitude.HasValue)
+        {
+            lookup = await _locationGeocodingService.ReverseAsync((double)dto.Latitude.Value, (double)dto.Longitude.Value, ct);
+        }
+
+        if (lookup is not null)
+        {
+            farm.Latitude = (decimal)lookup.Latitude;
+            farm.Longitude = (decimal)lookup.Longitude;
+            farm.Governorate = lookup.Governorate ?? farm.Governorate;
+            farm.City = lookup.City ?? farm.City;
+            farm.Address_line = lookup.AddressLine ?? farm.Address_line;
+        }
+
+        if (dto.Latitude.HasValue)
+            farm.Latitude = dto.Latitude;
+
+        if (dto.Longitude.HasValue)
+            farm.Longitude = dto.Longitude;
+
+        if (!string.IsNullOrWhiteSpace(dto.Governorate))
+            farm.Governorate = dto.Governorate.Trim();
+
+        if (!string.IsNullOrWhiteSpace(dto.City))
+            farm.City = dto.City.Trim();
+
+        if (!string.IsNullOrWhiteSpace(dto.Address_line))
+            farm.Address_line = dto.Address_line.Trim();
+    }
 
     /// <summary>List all farms owned by the current user.</summary>
     [HttpGet("me")]
@@ -105,17 +147,14 @@ public class FarmController : ControllerBase
         var farm = new FARM
         {
             Name = dto.Name.Trim(),
-            Latitude = dto.Latitude,
-            Longitude = dto.Longitude,
-            Governorate = dto.Governorate,
-            City = dto.City,
-            Address_line = dto.Address_line,
             Area_size = dto.Area_size,
             Default_Soil_type = dto.Default_Soil_type,
             Notes = dto.Notes,
             CreatedAt = DateTime.UtcNow,
             Uid = uid
         };
+
+        await ApplyLocationAsync(farm, dto, ct);
 
         _db.FARMs.Add(farm);
         await _db.SaveChangesAsync(ct);
@@ -137,14 +176,11 @@ public class FarmController : ControllerBase
         if (!string.IsNullOrWhiteSpace(dto.Name))
             farm.Name = dto.Name.Trim();
 
-        farm.Latitude = dto.Latitude ?? farm.Latitude;
-        farm.Longitude = dto.Longitude ?? farm.Longitude;
-        farm.Governorate = dto.Governorate ?? farm.Governorate;
-        farm.City = dto.City ?? farm.City;
-        farm.Address_line = dto.Address_line ?? farm.Address_line;
         farm.Area_size = dto.Area_size ?? farm.Area_size;
         farm.Default_Soil_type = dto.Default_Soil_type ?? farm.Default_Soil_type;
         farm.Notes = dto.Notes ?? farm.Notes;
+
+        await ApplyLocationAsync(farm, dto, ct);
 
         await _db.SaveChangesAsync(ct);
 

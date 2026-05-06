@@ -40,6 +40,8 @@ public partial class ORDER
     [Column(TypeName = "nvarchar(max)")]
     public string Order_notes { get; set; }
 
+    public DateTime CreatedAt { get; set; }
+
     [ForeignKey("Pid")]
     [InverseProperty("ORDERs")]
     public virtual PRODUCT PidNavigation { get; set; }

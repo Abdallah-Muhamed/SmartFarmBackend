@@ -29,10 +29,12 @@ public partial class PRODUCT
 
     public int? Cid { get; set; }
 
-    [Column(TypeName = "nvarchar(max)")]
+    [StringLength(50)]
     public string Category { get; set; }
 
     public double? Rating { get; set; }
+
+    public DateTime CreatedAt { get; set; }
 
 
     [ForeignKey("Cid")]

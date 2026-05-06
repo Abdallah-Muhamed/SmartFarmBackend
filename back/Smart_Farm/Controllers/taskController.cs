@@ -93,7 +93,8 @@ namespace Smart_Farm.Controllers
                 Label = b.Label,
                 Content = b.Content,
                 State = b.State,
-                Uid = uid
+                Uid = uid,
+                CreatedAt = DateTime.UtcNow
             };
             db.Tasks.Add(entity);
             db.SaveChanges();

@@ -124,7 +124,8 @@ namespace Smart_Farm.Controllers
                 Uid = uid,
                 Cid = b.Cid,
                 Category = b.Category,
-                Rating = b.Rating
+                Rating = b.Rating,
+                CreatedAt = DateTime.UtcNow
             };
             db.PRODUCTs.Add(entity);
             db.SaveChanges();

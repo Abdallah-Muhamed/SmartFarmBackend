@@ -107,7 +107,8 @@ namespace Smart_Farm.Controllers
                 // Inherited from the farm — user doesn't supply these on the crop.
                 Soil_type = farm.Default_Soil_type,
                 Current_Stage = b.Current_Stage,
-                Uid = farm.Uid
+                Uid = farm.Uid,
+                CreatedAt = DateTime.UtcNow
             };
             db.CROPs.Add(entity);
             db.SaveChanges();

@@ -3,6 +3,7 @@ namespace Smart_Farm.DTOS;
 public class CreateFarmDto
 {
     public string Name { get; set; } = default!;
+    public string? LocationQuery { get; set; }
     public decimal? Latitude { get; set; }
     public decimal? Longitude { get; set; }
     public string? Governorate { get; set; }

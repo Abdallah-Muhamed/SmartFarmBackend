@@ -62,7 +62,7 @@ public class AIDiagnosesController(IAIDiagnosisService service, IConfiguration c
     }
 
     // ─── PUT api/AIdiagnoses/{id}/image ─────────────────────────────────────
-    [HttpPut("{id:int}/image")]
+    [HttpPut("{id:int}/image")] 
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UploadImage([FromRoute] int id, IFormFile file, [FromServices] farContext db, CancellationToken cancellationToken)
     {

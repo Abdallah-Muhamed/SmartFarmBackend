@@ -34,6 +34,8 @@ public partial class CROP
 
     public int? FarmId { get; set; }
 
+    public DateTime CreatedAt { get; set; }
+
     [ForeignKey("FarmId")]
     [InverseProperty("CROPs")]
     public virtual FARM FarmNavigation { get; set; }

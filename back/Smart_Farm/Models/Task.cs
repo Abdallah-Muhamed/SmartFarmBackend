@@ -27,6 +27,8 @@ public partial class Task
 
     public int? Uid { get; set; }
 
+    public DateTime CreatedAt { get; set; }
+
     [ForeignKey("Uid")]
     [InverseProperty("Tasks")]
     public virtual USER UidNavigation { get; set; }

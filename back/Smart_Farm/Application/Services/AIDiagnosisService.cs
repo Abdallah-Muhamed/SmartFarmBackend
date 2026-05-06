@@ -42,7 +42,7 @@ public class AIDiagnosisService(
 
         var diagnosis = new AI_Diagnosis
         {
-            DiagnosisDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            DiagnosisDate = DateTime.UtcNow,
             Result = prediction.DiseaseName,
             Did = disease?.Did,
             plant_image = null
