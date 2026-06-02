@@ -167,6 +167,14 @@ public class ProductController(farContext db) : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("all")]
+    public async Task<ActionResult> DeleteAll()
+    {
+        var uid = UserClaims.RequireUid(User);
+        var deletedCount = await _db.PRODUCTs.Where(p => p.Uid == uid).ExecuteDeleteAsync();
+        return Ok(new { deletedCount });
+    }
+
     // DELETE: api/product/{id}
     [HttpDelete("{id:int}")]
     public async Task<ActionResult> Delete(int id)

@@ -6,9 +6,8 @@ namespace Smart_Farm.Application.Abstractions;
 public interface IAIDiagnosisRepository
 {
     // Filtered by user — for history endpoint
-    System.Threading.Tasks.Task<List<AIDiagnosisResponseDto>> GetAllAsync(int userId, CancellationToken cancellationToken);
+    System.Threading.Tasks.Task<List<DiagnoseFullResultDto>> GetAllAsync(int userId, CancellationToken cancellationToken);
 
-    System.Threading.Tasks.Task<AIDiagnosisResponseDto?> GetByIdAsync(int id, CancellationToken cancellationToken);
     System.Threading.Tasks.Task<AI_Diagnosis?> FindEntityByIdAsync(int id, CancellationToken cancellationToken);
 
     System.Threading.Tasks.Task<Disease?> FindDiseaseByNameAsync(string diseaseName, CancellationToken cancellationToken);
@@ -25,4 +24,7 @@ public interface IAIDiagnosisRepository
 
     System.Threading.Tasks.Task AddAsync(AI_Diagnosis diagnosis, CancellationToken cancellationToken);
     System.Threading.Tasks.Task SaveChangesAsync(CancellationToken cancellationToken);
+
+    System.Threading.Tasks.Task<int> GetDiagnosisCountForUserAsync(
+        int userId, CancellationToken cancellationToken);
 }

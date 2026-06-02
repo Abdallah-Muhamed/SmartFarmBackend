@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Smart_Farm.DTOS;
+using Smart_Farm.Infrastructure.Persistence;
 using Smart_Farm.Infrastructure.Security;
 using Smart_Farm.Models;
 
@@ -173,6 +174,22 @@ public class CropController(farContext db) : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("all")]
+    public async Task<ActionResult> DeleteAll(CancellationToken ct)
+    {
+        var uid = UserClaims.RequireUid(User);
+
+        var cropIds = await _db.CROPs
+            .Where(c => c.Uid == uid)
+            .Select(c => c.Cid)
+            .ToListAsync(ct);
+
+        await CropDeletionHelper.RemoveDependenciesAsync(_db, cropIds, ct);
+
+        var deletedCount = await _db.CROPs.Where(c => c.Uid == uid).ExecuteDeleteAsync(ct);
+        return Ok(new { deletedCount });
+    }
+
     // ????????????? DELETE ?????????????
     [HttpDelete("{id:int}")]
     public async Task<ActionResult> Delete(int id, CancellationToken ct)
@@ -186,6 +203,8 @@ public class CropController(farContext db) : ControllerBase
 
         if (entity.Uid != uid)
             return Forbid();
+
+        await CropDeletionHelper.RemoveDependenciesAsync(_db, [entity.Cid], ct);
 
         _db.CROPs.Remove(entity);
         await _db.SaveChangesAsync(ct);

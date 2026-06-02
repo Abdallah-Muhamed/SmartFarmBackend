@@ -8,7 +8,7 @@ namespace Smart_Farm.Infrastructure.Persistence;
 
 public class AIDiagnosisRepository(farContext db) : IAIDiagnosisRepository
 {
-    public async System.Threading.Tasks.Task<List<AIDiagnosisResponseDto>> GetAllAsync(
+    public async System.Threading.Tasks.Task<List<DiagnoseFullResultDto>> GetAllAsync(
         int userId, CancellationToken cancellationToken)
     {
         var rows = await db.AI_Diagnoses
@@ -25,38 +25,19 @@ public class AIDiagnosisRepository(farContext db) : IAIDiagnosisRepository
                 d.GrogArabicReport))
             .ToListAsync(cancellationToken);
 
-        return rows.Select(MapToResponseDto).ToList();
+        return rows.Select(MapToResult).ToList();
     }
 
-    public async System.Threading.Tasks.Task<AIDiagnosisResponseDto?> GetByIdAsync(
-        int id, CancellationToken cancellationToken)
-    {
-        var row = await db.AI_Diagnoses
-            .AsNoTracking()
-            .Where(d => d.ADid == id)
-            .Select(d => new DiagnosisRow(
-                d.ADid,
-                d.DiagnosisDate,
-                d.Confidence,
-                d.Did,
-                d.Cid,
-                d.plant_image,
-                d.GrogArabicReport))
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return row is null ? null : MapToResponseDto(row);
-    }
-
-    private static AIDiagnosisResponseDto MapToResponseDto(DiagnosisRow row) =>
+    private static DiagnoseFullResultDto MapToResult(DiagnosisRow row) =>
         new()
         {
             ADid = row.ADid,
-            DiagnosisDate = row.DiagnosisDate,
+            DiagnosisDate = DateTimeUtc.Normalize(row.DiagnosisDate),
             Confidence = row.Confidence,
             Did = row.Did,
             Cid = row.Cid,
             plant_image = row.plant_image,
-            GrogArabicReport = ReportJsonSerializer.Deserialize(row.GrogArabicReport)
+            Report = ReportJsonSerializer.Deserialize(row.GrogArabicReport)
         };
 
     private sealed record DiagnosisRow(
@@ -118,5 +99,13 @@ public class AIDiagnosisRepository(farContext db) : IAIDiagnosisRepository
     public async System.Threading.Tasks.Task SaveChangesAsync(CancellationToken cancellationToken)
     {
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async System.Threading.Tasks.Task<int> GetDiagnosisCountForUserAsync(
+        int userId, CancellationToken cancellationToken)
+    {
+        return await db.AI_Diagnoses
+            .AsNoTracking()
+            .CountAsync(d => d.UserId == userId, cancellationToken);
     }
 }

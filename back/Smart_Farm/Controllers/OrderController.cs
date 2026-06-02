@@ -137,6 +137,14 @@ public class OrderController(farContext db) : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("all")]
+    public async Task<ActionResult> DeleteAll()
+    {
+        var uid = UserClaims.RequireUid(User);
+        var deletedCount = await _db.ORDERs.Where(o => o.Uid == uid).ExecuteDeleteAsync();
+        return Ok(new { deletedCount });
+    }
+
     // ??????????????? DELETE ???????????????
     [HttpDelete("{id:int}")]
     public async Task<ActionResult> Delete(int id)

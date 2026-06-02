@@ -130,6 +130,16 @@ namespace Smart_Farm.Controllers
 
             return Ok(irrigations);
         }
+        [HttpDelete("all")]
+        public async Task<ActionResult> DeleteAll(CancellationToken ct)
+        {
+            var uid = UserClaims.RequireUid(User);
+            var deletedCount = await db.IRRIGATIONs
+                .Where(i => i.Cid != null && db.CROPs.Any(c => c.Cid == i.Cid && c.Uid == uid))
+                .ExecuteDeleteAsync(ct);
+            return Ok(new { deletedCount });
+        }
+
         //DELETE
         [HttpDelete("{id}")]
         public ActionResult Delete(int id)

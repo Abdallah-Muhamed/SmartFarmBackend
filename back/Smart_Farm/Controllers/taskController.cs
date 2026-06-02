@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using Smart_Farm.DTOS;
 using Smart_Farm.Infrastructure.Security;
 using Smart_Farm.Models;
@@ -63,6 +63,14 @@ namespace Smart_Farm.Controllers
         }
 
         //Edit
+
+        [HttpDelete("all")]
+        public async Task<ActionResult> DeleteAll(CancellationToken ct)
+        {
+            var uid = UserClaims.RequireUid(User);
+            var deletedCount = await db.Tasks.Where(t => t.Uid == uid).ExecuteDeleteAsync(ct);
+            return Ok(new { deletedCount });
+        }
 
         //DELETE
         [HttpDelete("{id}")]

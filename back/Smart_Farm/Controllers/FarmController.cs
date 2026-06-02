@@ -190,6 +190,31 @@ public class FarmController : ControllerBase
         return Ok(ToDto(farm, count));
     }
 
+    /// <summary>Delete all farms owned by the user that have no crops.</summary>
+    [HttpDelete("all")]
+    public async Task<IActionResult> DeleteAll(CancellationToken ct)
+    {
+        var uid = UserClaims.RequireUid(User);
+        var farms = await _db.FARMs.Where(f => f.Uid == uid).ToListAsync(ct);
+        var deletedCount = 0;
+        var skippedCount = 0;
+
+        foreach (var farm in farms)
+        {
+            if (await _db.CROPs.AnyAsync(c => c.FarmId == farm.FarmId, ct))
+            {
+                skippedCount++;
+                continue;
+            }
+
+            _db.FARMs.Remove(farm);
+            deletedCount++;
+        }
+
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { deletedCount, skippedCount });
+    }
+
     /// <summary>Delete a farm. Only allowed when it has no crops.</summary>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)

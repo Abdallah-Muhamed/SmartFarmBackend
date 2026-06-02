@@ -1,4 +1,5 @@
 using Smart_Farm.Application.Abstractions;
+using Smart_Farm.Application.Exceptions;
 using Smart_Farm.Common;
 using Smart_Farm.DTOS;
 using Smart_Farm.Models;
@@ -11,16 +12,26 @@ public class AIDiagnosisService(
     IAgriculturalReportGenerator reportGenerator,
     CloudinaryService cloudinaryService) : IAIDiagnosisService
 {
-    public async Task<IReadOnlyList<AIDiagnosisResponseDto>> GetAllAsync(int userId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<DiagnoseFullResultDto>> GetAllAsync(int userId, CancellationToken cancellationToken)
         => await repository.GetAllAsync(userId, cancellationToken);
 
-    public async Task<AIDiagnosisResponseDto?> GetByIdAsync(int id, CancellationToken cancellationToken)
-        => await repository.GetByIdAsync(id, cancellationToken);
+    public Task<int> GetDiagnosisCountForUserAsync(int userId, CancellationToken cancellationToken)
+        => repository.GetDiagnosisCountForUserAsync(userId, cancellationToken);
 
     public async Task<DiagnoseFullResultDto> DiagnoseAsync(DiagnoseRequest request, int userId, CancellationToken cancellationToken)
     {
         if (request.Image is null || request.Image.Length == 0)
-            throw new ArgumentException("No image uploaded", nameof(request));
+            throw new DiagnosisUnprocessableException();
+
+        var cropInfo = await repository.GetCropPlantInfoByCidAsync(
+            request.Cid, userId, cancellationToken);
+        if (cropInfo is null)
+            throw new CropNotFoundException(request.Cid);
+
+        var resolvedCid    = cropInfo.Cid;
+        var resolvedPid    = cropInfo.Pid;
+        var resolvedFarmId = cropInfo.FarmId;
+        var plantName      = cropInfo.PlantName;
 
         // ── 1. Read image bytes once ─────────────────────────────────────────
         byte[] bytes;
@@ -31,12 +42,24 @@ public class AIDiagnosisService(
         }
 
         // ── 2. Run PlantNet ──────────────────────────────────────────────────
-        await using var predictionStream = new MemoryStream(bytes);
-        var prediction = await plantDiseaseIdentifier.IdentifyAsync(
-            predictionStream,
-            request.Image.FileName,
-            request.Image.ContentType,
-            cancellationToken);
+        PlantDiseasePredictionResult prediction;
+        try
+        {
+            await using var predictionStream = new MemoryStream(bytes);
+            prediction = await plantDiseaseIdentifier.IdentifyAsync(
+                predictionStream,
+                request.Image.FileName,
+                request.Image.ContentType,
+                cancellationToken);
+        }
+        catch (DiagnosisUnprocessableException)
+        {
+            throw;
+        }
+        catch (Exception ex)    
+        {
+            throw new DiagnosisUnprocessableException(ex);
+        }
 
         // ── 3. Find or create Disease row ────────────────────────────────────
         var disease = await repository.FindDiseaseByNameAsync(prediction.DiseaseName, cancellationToken);
@@ -45,25 +68,6 @@ public class AIDiagnosisService(
             disease = new Disease { Name = prediction.DiseaseName };
             await repository.AddDiseaseAsync(disease, cancellationToken);
             await repository.SaveChangesAsync(cancellationToken);
-        }
-
-        // ── 4. Resolve Cid → Pid → PLANT.Name (+ FarmId) ─────────────────────
-        int? resolvedCid    = null;
-        int? resolvedPid    = null;
-        int? resolvedFarmId = null;
-        string? plantName   = null;
-
-        if (request.Cid.HasValue)
-        {
-            var cropInfo = await repository.GetCropPlantInfoByCidAsync(
-                request.Cid.Value, userId, cancellationToken);
-            if (cropInfo is not null)
-            {
-                resolvedCid    = cropInfo.Cid;
-                resolvedPid    = cropInfo.Pid;
-                resolvedFarmId = cropInfo.FarmId;
-                plantName      = cropInfo.PlantName;
-            }
         }
 
         // ── 5. Save diagnosis row to get ADid ────────────────────────────────
@@ -121,15 +125,7 @@ public class AIDiagnosisService(
         catch (Exception ex)
         {
             Console.Error.WriteLine($"[AIDiagnosisService] Groq report failed for diagnosis {diagnosis.ADid}: {ex.Message}");
-
-            report = new GroqReportDto
-            {
-                Disease    = prediction.DiseaseName,
-                Symptoms   = "لا توجد معلومات.",
-                Causes     = "لا توجد معلومات.",
-                Treatment  = "لا توجد معلومات.",
-                Prevention = "لا توجد معلومات."
-            };
+            report = CreatePlaceholderReport();
         }
 
         // Store report as JSON string
@@ -141,27 +137,13 @@ public class AIDiagnosisService(
         return new DiagnoseFullResultDto
         {
             ADid          = diagnosis.ADid,
-            DiagnosisDate = diagnosis.DiagnosisDate,
+            DiagnosisDate = DateTimeUtc.Normalize(diagnosis.DiagnosisDate),
             Confidence    = prediction.Confidence,
             Did           = disease.Did,
             Cid           = resolvedCid,
             plant_image   = imageUrl,
             Report        = report
         };
-    }
-
-    public async Task<bool> UpdateAsync(int id, UpdateAIDiagnosisRequestDto request, CancellationToken cancellationToken)
-    {
-        var existing = await repository.FindEntityByIdAsync(id, cancellationToken);
-        if (existing is null) return false;
-
-        existing.DiagnosisDate = request.DiagnosisDate;
-        existing.Result        = request.Result;
-        existing.Did           = request.Did;
-        existing.Cid           = request.Cid;
-
-        await repository.SaveChangesAsync(cancellationToken);
-        return true;
     }
 
     public async Task<GroqReportDto?> RegenerateReportAsync(
@@ -184,11 +166,29 @@ public class AIDiagnosisService(
             plant_image = entity.plant_image
         };
 
-        var report = await reportGenerator.GenerateArabicReportAsync(plantNetResult, cancellationToken);
+        GroqReportDto report;
+        try
+        {
+            report = await reportGenerator.GenerateArabicReportAsync(plantNetResult, cancellationToken);
+        }
+        catch (Exception)
+        {
+            report = CreatePlaceholderReport();
+        }
+
         entity.GrogArabicReport = ReportJsonSerializer.Serialize(report);
         await repository.SaveChangesAsync(cancellationToken);
         return report;
     }
+
+    private static GroqReportDto CreatePlaceholderReport() => new()
+    {
+        Disease    = "لا توجد معلومات.",
+        Symptoms   = "لا توجد معلومات.",
+        Causes     = "لا توجد معلومات.",
+        Treatment  = "لا توجد معلومات.",
+        Prevention = "لا توجد معلومات."
+    };
 
     private async Task<string?> ResolvePlantNameAsync(
         int? cid, int? pid, int userId, CancellationToken cancellationToken)

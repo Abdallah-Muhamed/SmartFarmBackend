@@ -72,6 +72,8 @@ public partial class farContext : IdentityDbContext<AppUser, IdentityRole<int>, 
         {
             entity.HasKey(e => e.ADid).HasName("PK__AI_Diagn__7931D1B8DEB8ED6F");
 
+            entity.HasIndex(e => e.UserId);
+
             entity.HasOne(d => d.CidNavigation).WithMany(p => p.AI_Diagnoses).HasConstraintName("FK__AI_Diagnosi__Cid__6754599E");
 
             entity.HasOne(d => d.DidNavigation).WithMany(p => p.AI_Diagnoses).HasConstraintName("FK__AI_Diagnosi__Did__68487DD7");
