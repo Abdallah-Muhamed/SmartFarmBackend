@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Smart_Farm.Application.Abstractions;
+using Smart_Farm.DTOS;
 using Smart_Farm.Models;
 
 namespace Smart_Farm.Application.Services;
@@ -15,6 +16,7 @@ public class WaterBalanceService : IWaterBalanceService
 {
     private readonly farContext _db;
     private readonly IWeatherProvider _weather;
+    private readonly IIrrigationAdviceGenerator _adviceGenerator;
     private readonly ILogger<WaterBalanceService> _logger;
 
     private const double FEDDAN_M2 = 4200.0;
@@ -22,10 +24,15 @@ public class WaterBalanceService : IWaterBalanceService
     private const double RAIN_RUNOFF_FACTOR = 0.8;      // 20% runoff assumption
     private const double IRRIG_EFFICIENCY = 0.85;       // drip/sprinkler default
 
-    public WaterBalanceService(farContext db, IWeatherProvider weather, ILogger<WaterBalanceService> logger)
+    public WaterBalanceService(
+        farContext db,
+        IWeatherProvider weather,
+        IIrrigationAdviceGenerator adviceGenerator,
+        ILogger<WaterBalanceService> logger)
     {
         _db = db;
         _weather = weather;
+        _adviceGenerator = adviceGenerator;
         _logger = logger;
     }
 
@@ -105,22 +112,13 @@ public class WaterBalanceService : IWaterBalanceService
         bool isIrrigDay = deplAfterEt >= rawMm;
         double irrigMm = 0;
         double deplEnd = deplAfterEt;
-        string reason;
 
         if (isIrrigDay)
         {
-            // Refill to field capacity — but gross amount accounts for application efficiency.
-            double netNeed = deplAfterEt;                    // mm required at the root zone
-            double grossMm = netNeed / IRRIG_EFFICIENCY;     // mm to apply at surface
+            double netNeed = deplAfterEt;
+            double grossMm = netNeed / IRRIG_EFFICIENCY;
             irrigMm = Math.Round(grossMm, 2);
             deplEnd = 0;
-            reason =
-                $"Depletion {deplAfterEt:0.0} mm ≥ RAW {rawMm:0.0} mm ⇒ irrigation needed. "
-                + $"Gross depth = {irrigMm:0.0} mm (net {netNeed:0.0} mm ÷ η {IRRIG_EFFICIENCY:0.00}).";
-        }
-        else
-        {
-            reason = $"Depletion {deplAfterEt:0.0} mm < RAW {rawMm:0.0} mm ⇒ no irrigation today.";
         }
 
         // ─── 7. Convert to م³/فدان and field totals ───────────────────────
@@ -153,13 +151,13 @@ public class WaterBalanceService : IWaterBalanceService
             await _db.SaveChangesAsync(cancellationToken);
         }
 
-        // ─── 9. Build DTO ─────────────────────────────────────────────────
-        return new IrrigationRecommendationDto
+        // ─── 9. Build DTO + Groq Arabic advice (reasoning) ─────────────────
+        var dto = new IrrigationRecommendationDto
         {
             Cid = cid,
             Date = date,
             PlantName = plantName,
-            StageName = currentStage.Name_stage ?? $"Stage {currentStage.Stage_order}",
+            StageName = currentStage.Name_stage ?? $"مرحلة {currentStage.Stage_order}",
             SoilType = soilType,
             AreaFeddan = areaFeddan,
 
@@ -177,10 +175,44 @@ public class WaterBalanceService : IWaterBalanceService
             DeplStart_mm = (decimal)Math.Round(deplStart, 2),
             DeplAfterEt_mm = (decimal)Math.Round(deplAfterEt, 2),
             DeplEnd_mm = (decimal)Math.Round(deplEnd, 2),
-            Irrig_mm = (decimal)Math.Round(irrigMm, 2),
-            Reasoning = reason
+            Irrig_mm = (decimal)Math.Round(irrigMm, 2)
         };
+
+        try
+        {
+            dto.Reasoning = await _adviceGenerator.GenerateArabicAdviceAsync(
+                new IrrigationAdviceInput
+                {
+                    Recommendation = dto,
+                    Rain_mm = wx.Rain_mm,
+                    Tmin_C = wx.Tmin_C,
+                    Tmax_C = wx.Tmax_C
+                },
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Groq irrigation advice failed for crop {Cid} on {Date}", cid, date);
+            dto.Reasoning = CreatePlaceholderAdvice(dto);
+        }
+
+        return dto;
     }
+
+    private static IrrigationAdviceReportDto CreatePlaceholderAdvice(IrrigationRecommendationDto dto) =>
+        new()
+        {
+            Summary = dto.IsIrrigationDay
+                ? $"اليوم يوم ري لمحصول {dto.PlantName} في مرحلة {dto.StageName}."
+                : $"لا حاجة للري اليوم لمحصول {dto.PlantName} — رطوبة التربة ضمن الحد الآمن.",
+            Recommendation = dto.IsIrrigationDay
+                ? $"يُوصى بري الحقل بكمية تقارب {dto.Recommended_m3_field} م³ ({dto.Recommended_Liters_field} لتر) أي نحو {dto.Recommended_m3_per_feddan} م³ لكل فدان."
+                : "لا تُطبّق رية اليوم؛ راقب مستوى النضج الجاف غداً.",
+            Timing = "يفضّل الري عند الفجر أو قبل الغروب لتقليل التبخر.",
+            ApplicationTips = "وزّع المياه بانتظام على صفوف المحصول وتجنب الجريان السطحي.",
+            SoilWeatherNotes = $"تربة {dto.SoilType} — استهلاك نباتي تقديري {dto.ETc_mm} مم مع أمطار فعّالة {dto.EffRain_mm} مم.",
+            Warnings = "تعذّر توليد تقرير مفصّل حالياً — راجع الكميات المحسوبة في النظام."
+        };
 
     private static PLANT_STAGE ResolveCurrentStage(List<PLANT_STAGE> stages, int daysSinceStart)
     {

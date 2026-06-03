@@ -174,20 +174,34 @@ public class CropController(farContext db) : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Delete all crops in a farm owned by the current user.</summary>
     [HttpDelete("all")]
-    public async Task<ActionResult> DeleteAll(CancellationToken ct)
+    public async Task<ActionResult> DeleteAll([FromQuery] int farmId, CancellationToken ct)
     {
+        if (farmId <= 0)
+            return BadRequest("farmId is required.");
+
         var uid = UserClaims.RequireUid(User);
 
+        var farm = await _db.FARMs.FirstOrDefaultAsync(f => f.FarmId == farmId, ct);
+        if (farm is null)
+            return NotFound();
+
+        if (farm.Uid != uid)
+            return Forbid();
+
         var cropIds = await _db.CROPs
-            .Where(c => c.Uid == uid)
+            .Where(c => c.Uid == uid && c.FarmId == farmId)
             .Select(c => c.Cid)
             .ToListAsync(ct);
 
         await CropDeletionHelper.RemoveDependenciesAsync(_db, cropIds, ct);
 
-        var deletedCount = await _db.CROPs.Where(c => c.Uid == uid).ExecuteDeleteAsync(ct);
-        return Ok(new { deletedCount });
+        var deletedCount = await _db.CROPs
+            .Where(c => c.Uid == uid && c.FarmId == farmId)
+            .ExecuteDeleteAsync(ct);
+
+        return Ok(new { farmId, deletedCount });
     }
 
     // ????????????? DELETE ?????????????

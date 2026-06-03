@@ -18,8 +18,10 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddInfrastructureLayer(this IServiceCollection services)
     {
         services.AddScoped<IAIDiagnosisRepository, AIDiagnosisRepository>();
+        services.AddScoped<IPlantSpeciesIdentifier, PlantNetSpeciesIdentifier>();
         services.AddScoped<IPlantDiseaseIdentifier, PlantNetDiseaseIdentifier>();
         services.AddScoped<IAgriculturalReportGenerator, GrogAgriculturalReportGenerator>();
+        services.AddScoped<IIrrigationAdviceGenerator, GrogIrrigationAdviceGenerator>();
         services.AddHttpClient("OpenMeteo");
         services.AddHttpClient("Nominatim");
         services.AddScoped<ILocationGeocodingService, NominatimLocationGeocodingService>();

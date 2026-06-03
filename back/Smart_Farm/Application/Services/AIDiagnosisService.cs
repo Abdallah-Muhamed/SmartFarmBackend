@@ -8,6 +8,7 @@ namespace Smart_Farm.Application.Services;
 
 public class AIDiagnosisService(
     IAIDiagnosisRepository repository,
+    IPlantSpeciesIdentifier plantSpeciesIdentifier,
     IPlantDiseaseIdentifier plantDiseaseIdentifier,
     IAgriculturalReportGenerator reportGenerator,
     CloudinaryService cloudinaryService) : IAIDiagnosisService
@@ -15,8 +16,54 @@ public class AIDiagnosisService(
     public async Task<IReadOnlyList<DiagnoseFullResultDto>> GetAllAsync(int userId, CancellationToken cancellationToken)
         => await repository.GetAllAsync(userId, cancellationToken);
 
+    public Task<DiagnoseFullResultDto?> GetByIdAsync(int id, int userId, CancellationToken cancellationToken)
+        => repository.GetByIdAsync(id, userId, cancellationToken);
+
     public Task<int> GetDiagnosisCountForUserAsync(int userId, CancellationToken cancellationToken)
         => repository.GetDiagnosisCountForUserAsync(userId, cancellationToken);
+
+    public async Task<bool> DeleteAsync(int id, int userId, CancellationToken cancellationToken)
+    {
+        var entity = await repository.FindEntityByIdAsync(id, cancellationToken);
+        if (entity is null || entity.UserId != userId)
+            return false;
+
+        var imageUrl = entity.plant_image;
+        var deleted = await repository.DeleteForUserAsync(id, userId, cancellationToken);
+        if (!deleted)
+            return false;
+
+        try
+        {
+            await cloudinaryService.TryDeleteByUrlAsync(imageUrl);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[AIDiagnosisService] Cloudinary delete failed for diagnosis {id}: {ex.Message}");
+        }
+
+        return true;
+    }
+
+    public async Task<int> DeleteAllAsync(int userId, CancellationToken cancellationToken)
+    {
+        var imageUrls = await repository.GetImageUrlsForUserAsync(userId, cancellationToken);
+        var deletedCount = await repository.DeleteAllForUserAsync(userId, cancellationToken);
+
+        foreach (var url in imageUrls)
+        {
+            try
+            {
+                await cloudinaryService.TryDeleteByUrlAsync(url);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[AIDiagnosisService] Cloudinary delete failed: {ex.Message}");
+            }
+        }
+
+        return deletedCount;
+    }
 
     public async Task<DiagnoseFullResultDto> DiagnoseAsync(DiagnoseRequest request, int userId, CancellationToken cancellationToken)
     {
@@ -41,7 +88,35 @@ public class AIDiagnosisService(
             bytes = ms.ToArray();
         }
 
-        // ── 2. Run PlantNet ──────────────────────────────────────────────────
+        // ── 2. PlantNet species — verify image matches crop plant ─────────────
+        PlantSpeciesIdentificationResult species;
+        try
+        {
+            await using var speciesStream = new MemoryStream(bytes);
+            species = await plantSpeciesIdentifier.IdentifyAsync(
+                speciesStream,
+                request.Image.FileName,
+                request.Image.ContentType,
+                cancellationToken);
+        }
+        catch (DiagnosisUnprocessableException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new DiagnosisUnprocessableException(ex);
+        }
+
+        if (string.IsNullOrWhiteSpace(plantName)
+            || !PlantNameMatcher.Matches(plantName, species))
+        {
+            throw new PlantMismatchException(
+                plantName ?? "غير محدد",
+                PlantNameMatcher.DisplayName(species));
+        }
+
+        // ── 3. PlantNet diseases ─────────────────────────────────────────────
         PlantDiseasePredictionResult prediction;
         try
         {
@@ -56,12 +131,12 @@ public class AIDiagnosisService(
         {
             throw;
         }
-        catch (Exception ex)    
+        catch (Exception ex)
         {
             throw new DiagnosisUnprocessableException(ex);
         }
 
-        // ── 3. Find or create Disease row ────────────────────────────────────
+        // ── 4. Find or create Disease row ────────────────────────────────────
         var disease = await repository.FindDiseaseByNameAsync(prediction.DiseaseName, cancellationToken);
         if (disease is null)
         {

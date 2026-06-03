@@ -45,4 +45,41 @@ public class CloudinaryService
 
         return result.SecureUrl.ToString();
     }
+
+    public async Task TryDeleteByUrlAsync(string? url)
+    {
+        var publicId = ExtractPublicId(url);
+        if (string.IsNullOrWhiteSpace(publicId))
+            return;
+
+        await _cloudinary.DestroyAsync(new DeletionParams(publicId));
+    }
+
+    private static string? ExtractPublicId(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return null;
+
+        try
+        {
+            var uri = new Uri(url);
+            var segments = uri.AbsolutePath.Split('/');
+            var uploadIdx = Array.IndexOf(segments, "upload");
+            if (uploadIdx < 0)
+                return null;
+
+            var start = uploadIdx + 1;
+            if (start < segments.Length && segments[start].StartsWith('v') &&
+                long.TryParse(segments[start][1..], out _))
+                start++;
+
+            var publicIdWithExt = string.Join("/", segments[start..]);
+            var dot = publicIdWithExt.LastIndexOf('.');
+            return dot >= 0 ? publicIdWithExt[..dot] : publicIdWithExt;
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }

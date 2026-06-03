@@ -12,7 +12,7 @@ using System.Security.Claims;
 namespace Smart_Farm.Controllers;
 
 /// <summary>
-/// AI diagnoses: read + generate reports only (no edit/delete).
+/// AI diagnoses: read, generate reports, and delete.
 /// </summary>
 [Authorize]
 [ApiController]
@@ -41,6 +41,20 @@ public class AIDiagnosesController(IAIDiagnosisService service) : ControllerBase
         return Ok(items);
     }
 
+    // ─── GET api/AIdiagnoses/{id} ────────────────────────────────────────────
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<DiagnoseFullResultDto>> GetById(
+        [FromRoute] int id,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            return Unauthorized();
+
+        var item = await service.GetByIdAsync(id, userId.Value, cancellationToken);
+        return item is null ? NotFound() : Ok(item);
+    }
+
     // ─── GET api/AIdiagnoses/stats/me ────────────────────────────────────────
     [HttpGet("stats/me")]
     public async Task<ActionResult<MyDiagnosisCountDto>> GetMyDiagnosisCount(CancellationToken cancellationToken)
@@ -50,6 +64,28 @@ public class AIDiagnosesController(IAIDiagnosisService service) : ControllerBase
 
         var count = await service.GetDiagnosisCountForUserAsync(userId, cancellationToken);
         return Ok(new MyDiagnosisCountDto { UserId = userId, DiagnosisCount = count });
+    }
+
+    // ─── DELETE api/AIdiagnoses/all ───────────────────────────────────────────
+    [HttpDelete("all")]
+    public async Task<ActionResult> DeleteAll(CancellationToken cancellationToken)
+    {
+        if (!UserClaims.TryGetUid(User, out var userId))
+            return Unauthorized();
+
+        var deletedCount = await service.DeleteAllAsync(userId, cancellationToken);
+        return Ok(new { deletedCount });
+    }
+
+    // ─── DELETE api/AIdiagnoses/{id} ──────────────────────────────────────────
+    [HttpDelete("{id:int}")]
+    public async Task<ActionResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
+    {
+        if (!UserClaims.TryGetUid(User, out var userId))
+            return Unauthorized();
+
+        var deleted = await service.DeleteAsync(id, userId, cancellationToken);
+        return deleted ? Ok(new { id, deleted = true }) : NotFound();
     }
 
     // ─── GET api/AIdiagnoses/{id}/report ────────────────────────────────────
@@ -97,6 +133,15 @@ public class AIDiagnosesController(IAIDiagnosisService service) : ControllerBase
         catch (CropNotFoundException)
         {
             return NotFound();
+        }
+        catch (PlantMismatchException ex)
+        {
+            return UnprocessableEntity(new
+            {
+                error = "النبات في الصورة لا يطابق المحصول المحدد.",
+                expectedPlant = ex.ExpectedPlant,
+                identifiedPlant = ex.IdentifiedPlant
+            });
         }
         catch (DiagnosisUnprocessableException)
         {

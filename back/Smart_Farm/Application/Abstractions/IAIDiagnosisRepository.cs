@@ -8,6 +8,9 @@ public interface IAIDiagnosisRepository
     // Filtered by user — for history endpoint
     System.Threading.Tasks.Task<List<DiagnoseFullResultDto>> GetAllAsync(int userId, CancellationToken cancellationToken);
 
+    System.Threading.Tasks.Task<DiagnoseFullResultDto?> GetByIdAsync(
+        int id, int userId, CancellationToken cancellationToken);
+
     System.Threading.Tasks.Task<AI_Diagnosis?> FindEntityByIdAsync(int id, CancellationToken cancellationToken);
 
     System.Threading.Tasks.Task<Disease?> FindDiseaseByNameAsync(string diseaseName, CancellationToken cancellationToken);
@@ -26,5 +29,14 @@ public interface IAIDiagnosisRepository
     System.Threading.Tasks.Task SaveChangesAsync(CancellationToken cancellationToken);
 
     System.Threading.Tasks.Task<int> GetDiagnosisCountForUserAsync(
+        int userId, CancellationToken cancellationToken);
+
+    System.Threading.Tasks.Task<List<string?>> GetImageUrlsForUserAsync(
+        int userId, CancellationToken cancellationToken);
+
+    System.Threading.Tasks.Task<bool> DeleteForUserAsync(
+        int id, int userId, CancellationToken cancellationToken);
+
+    System.Threading.Tasks.Task<int> DeleteAllForUserAsync(
         int userId, CancellationToken cancellationToken);
 }

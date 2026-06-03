@@ -28,6 +28,25 @@ public class AIDiagnosisRepository(farContext db) : IAIDiagnosisRepository
         return rows.Select(MapToResult).ToList();
     }
 
+    public async System.Threading.Tasks.Task<DiagnoseFullResultDto?> GetByIdAsync(
+        int id, int userId, CancellationToken cancellationToken)
+    {
+        var row = await db.AI_Diagnoses
+            .AsNoTracking()
+            .Where(d => d.ADid == id && d.UserId == userId)
+            .Select(d => new DiagnosisRow(
+                d.ADid,
+                d.DiagnosisDate,
+                d.Confidence,
+                d.Did,
+                d.Cid,
+                d.plant_image,
+                d.GrogArabicReport))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return row is null ? null : MapToResult(row);
+    }
+
     private static DiagnoseFullResultDto MapToResult(DiagnosisRow row) =>
         new()
         {
@@ -107,5 +126,37 @@ public class AIDiagnosisRepository(farContext db) : IAIDiagnosisRepository
         return await db.AI_Diagnoses
             .AsNoTracking()
             .CountAsync(d => d.UserId == userId, cancellationToken);
+    }
+
+    public async System.Threading.Tasks.Task<List<string?>> GetImageUrlsForUserAsync(
+        int userId, CancellationToken cancellationToken)
+    {
+        return await db.AI_Diagnoses
+            .AsNoTracking()
+            .Where(d => d.UserId == userId && d.plant_image != null)
+            .Select(d => d.plant_image)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async System.Threading.Tasks.Task<bool> DeleteForUserAsync(
+        int id, int userId, CancellationToken cancellationToken)
+    {
+        var entity = await db.AI_Diagnoses
+            .FirstOrDefaultAsync(d => d.ADid == id && d.UserId == userId, cancellationToken);
+
+        if (entity is null)
+            return false;
+
+        db.AI_Diagnoses.Remove(entity);
+        await db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async System.Threading.Tasks.Task<int> DeleteAllForUserAsync(
+        int userId, CancellationToken cancellationToken)
+    {
+        return await db.AI_Diagnoses
+            .Where(d => d.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
     }
 }

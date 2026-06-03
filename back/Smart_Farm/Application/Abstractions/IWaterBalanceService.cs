@@ -1,3 +1,5 @@
+using Smart_Farm.DTOS;
+
 namespace Smart_Farm.Application.Abstractions;
 
 public class IrrigationRecommendationDto
@@ -28,7 +30,7 @@ public class IrrigationRecommendationDto
     public decimal DeplEnd_mm { get; set; }
     public decimal Irrig_mm { get; set; }
 
-    public string Reasoning { get; set; } = string.Empty;
+    public IrrigationAdviceReportDto? Reasoning { get; set; }
 }
 
 public interface IWaterBalanceService
