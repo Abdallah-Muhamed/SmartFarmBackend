@@ -29,7 +29,7 @@ public class AuthenticationController(
     {
         var identityExists = await userManager.FindByEmailAsync(dto.Email);
         if (identityExists is not null)
-            return Conflict("Email is already registered.");
+            return Conflict(new { message = "Email is already registered." });
 
         // Auto-geocode location from city + address if lat/lng not provided
         decimal? lat = (dto.Latitude == 0 || dto.Latitude is null) ? null : dto.Latitude;
@@ -91,7 +91,10 @@ public class AuthenticationController(
         if (!createResult.Succeeded)
         {
             await transaction.RollbackAsync(cancellationToken);
-            return BadRequest(createResult.Errors.Select(e => e.Description));
+            return BadRequest(new
+            {
+                message = string.Join(" | ", createResult.Errors.Select(e => e.Description))
+            });
         }
 
         if (!await roleManager.RoleExistsAsync(dto.Role))
@@ -100,7 +103,10 @@ public class AuthenticationController(
             if (!roleCreation.Succeeded)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return BadRequest(roleCreation.Errors.Select(e => e.Description));
+                return BadRequest(new
+                {
+                    message = string.Join(" | ", roleCreation.Errors.Select(e => e.Description))
+                });
             }
         }
 
@@ -108,11 +114,14 @@ public class AuthenticationController(
         if (!addRoleResult.Succeeded)
         {
             await transaction.RollbackAsync(cancellationToken);
-            return BadRequest(addRoleResult.Errors.Select(e => e.Description));
+            return BadRequest(new
+            {
+                message = string.Join(" | ", addRoleResult.Errors.Select(e => e.Description))
+            });
         }
 
         await transaction.CommitAsync(cancellationToken);
-        return Ok("User Registered Successfully");
+        return Ok(new { message = "User Registered Successfully" });
     }
 
     [AllowAnonymous]
@@ -121,11 +130,11 @@ public class AuthenticationController(
     {
         var appUser = await userManager.FindByEmailAsync(dto.Email);
         if (appUser is null)
-            return Unauthorized("Invalid Email or Password");
+            return Unauthorized(new { message = "Invalid Email or Password" });
 
         var validPassword = await userManager.CheckPasswordAsync(appUser, dto.Password);
         if (!validPassword)
-            return Unauthorized("Invalid Email or Password");
+            return Unauthorized(new { message = "Invalid Email or Password" });
 
         var roleNames = await userManager.GetRolesAsync(appUser);
         var mainRole = roleNames.FirstOrDefault() ?? "User";

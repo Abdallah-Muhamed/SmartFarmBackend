@@ -177,11 +177,18 @@ app.Use(async (context, next) =>
     {
         await next();
     }
-    catch (UnauthorizedAccessException)
+    catch (UnauthorizedAccessException ex)
     {
         if (!context.Response.HasStarted)
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json; charset=utf-8";
+            await context.Response.WriteAsJsonAsync(new
+            {
+                message = string.IsNullOrWhiteSpace(ex.Message)
+                    ? "Missing or invalid uid claim. Please log in again."
+                    : ex.Message
+            });
         }
     }
 });
@@ -269,11 +276,10 @@ using (var scope = app.Services.CreateScope())
     app.UseSwagger();
     app.UseSwaggerUI();
 
+app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
 
-// IMPORTANT ORDER
-app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();

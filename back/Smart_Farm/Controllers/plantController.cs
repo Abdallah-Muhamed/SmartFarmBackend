@@ -1,4 +1,4 @@
-﻿using CloudinaryDotNet;
+using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -114,6 +114,97 @@ namespace Smart_Farm.Controllers
                 .ToList();
 
             return Ok(data);
+        }
+
+        // ─── POST api/plant/seed-stages (Allows anonymous seeding) ────────────
+        [AllowAnonymous]
+        [HttpPost("seed-stages")]
+        public async Task<IActionResult> SeedMissingStages()
+        {
+            var plantsWithNoStages = await db.PLANTs
+                .Where(p => !db.PLANT_STAGEs.Any(s => s.Pid == p.Pid))
+                .ToListAsync();
+
+            if (plantsWithNoStages.Count == 0)
+            {
+                return Ok(new { message = "All plants already have growth stages configured." });
+            }
+
+            using var transaction = await db.Database.BeginTransactionAsync();
+            try
+            {
+                int stagesInserted = 0;
+                int templatesInserted = 0;
+
+                foreach (var plant in plantsWithNoStages)
+                {
+                    // Define standard stages
+                    var stages = new List<PLANT_STAGE>
+                    {
+                        new PLANT_STAGE { Pid = plant.Pid, Name_stage = "الإنبات", Stage_order = 1, Duration_days = 10, Description = "مرحلة الإنبات والنمو الأولي للشتلة" },
+                        new PLANT_STAGE { Pid = plant.Pid, Name_stage = "النمو الخضري", Stage_order = 2, Duration_days = 20, Description = "مرحلة النمو الخضري للأوراق والسيقان" },
+                        new PLANT_STAGE { Pid = plant.Pid, Name_stage = "التزهير", Stage_order = 3, Duration_days = 15, Description = "مرحلة الإزهار وبداية التلقيح" },
+                        new PLANT_STAGE { Pid = plant.Pid, Name_stage = "العقد", Stage_order = 4, Duration_days = 25, Description = "مرحلة عقد وتكون وتضخم الثمار" },
+                        new PLANT_STAGE { Pid = plant.Pid, Name_stage = "النضج", Stage_order = 5, Duration_days = 15, Description = "مرحلة نضج الثمار واقتراب الحصاد" }
+                    };
+
+                    db.PLANT_STAGEs.AddRange(stages);
+                    await db.SaveChangesAsync();
+                    stagesInserted += stages.Count;
+
+                    // Add templates for each stage
+                    var templates = new List<PLANT_IRRIGATION_TEMPLATE>
+                    {
+                        new PLANT_IRRIGATION_TEMPLATE
+                        {
+                            Pid = plant.Pid, PSid = stages[0].PSid, Irrigation_name = $"ري إنبات {plant.Name}",
+                            Water_amount = 30, Frequency_value = 5, Frequency_unit = "days",
+                            Description = "ري خفيف لإنبات البذور", Kc = 0.40m, p_fraction = 0.50m, Zr_m = 0.15m
+                        },
+                        new PLANT_IRRIGATION_TEMPLATE
+                        {
+                            Pid = plant.Pid, PSid = stages[1].PSid, Irrigation_name = $"ري نمو {plant.Name}",
+                            Water_amount = 40, Frequency_value = 4, Frequency_unit = "days",
+                            Description = "ري معتدل للنمو الخضري", Kc = 0.70m, p_fraction = 0.50m, Zr_m = 0.40m
+                        },
+                        new PLANT_IRRIGATION_TEMPLATE
+                        {
+                            Pid = plant.Pid, PSid = stages[2].PSid, Irrigation_name = $"ري تزهير {plant.Name}",
+                            Water_amount = 45, Frequency_value = 3, Frequency_unit = "days",
+                            Description = "ري للأزهار وتثبيت العقد", Kc = 1.05m, p_fraction = 0.50m, Zr_m = 0.60m
+                        },
+                        new PLANT_IRRIGATION_TEMPLATE
+                        {
+                            Pid = plant.Pid, PSid = stages[3].PSid, Irrigation_name = $"ري عقد {plant.Name}",
+                            Water_amount = 50, Frequency_value = 3, Frequency_unit = "days",
+                            Description = "ري لنمو وتكبير الثمار", Kc = 1.15m, p_fraction = 0.50m, Zr_m = 0.80m
+                        },
+                        new PLANT_IRRIGATION_TEMPLATE
+                        {
+                            Pid = plant.Pid, PSid = stages[4].PSid, Irrigation_name = $"ري نضج {plant.Name}",
+                            Water_amount = 40, Frequency_value = 4, Frequency_unit = "days",
+                            Description = "تقليل الري لتهيئة المحصول للحصاد", Kc = 0.90m, p_fraction = 0.50m, Zr_m = 0.90m
+                        }
+                    };
+
+                    db.PLANT_IRRIGATION_TEMPLATEs.AddRange(templates);
+                    await db.SaveChangesAsync();
+                    templatesInserted += templates.Count;
+                }
+
+                await transaction.CommitAsync();
+                return Ok(new
+                {
+                    message = $"Successfully seeded {plantsWithNoStages.Count} plants.",
+                    stagesSeeded = stagesInserted,
+                    templatesSeeded = templatesInserted
+                });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
         // ─── Helper ───────────────────────────────────────────────────────────

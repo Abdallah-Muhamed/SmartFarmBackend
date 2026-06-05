@@ -14,7 +14,8 @@ public class ProductController(farContext db) : ControllerBase
 {
     private readonly farContext _db = db;
 
-    // GET: api/product
+    // GET: api/product (public catalog)
+    [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult> GetAll(
         [FromQuery] string? category,
@@ -83,7 +84,8 @@ public class ProductController(farContext db) : ControllerBase
         return Ok(items);
     }
 
-    // GET: api/product/{id}
+    // GET: api/product/{id} (public)
+    [AllowAnonymous]
     [HttpGet("{id:int}")]
     public async Task<ActionResult> GetById(int id)
     {
