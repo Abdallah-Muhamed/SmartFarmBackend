@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Smart_Farm.Application.Abstractions;
+using Smart_Farm.Common;
 using Smart_Farm.Models;
 using FarmTask = Smart_Farm.Models.Task;
 
@@ -262,8 +263,7 @@ public sealed class WeatherTaskGeneratorService : BackgroundService
         return (nowUtc + (tomorrowMorning - nowEgypt), RunType.Morning);
     }
 
-    private static DateOnly EgyptToday() =>
-        DateOnly.FromDateTime(DateTime.UtcNow.AddHours(EGYPT_UTC_OFFSET_HOURS));
+    private static DateOnly EgyptToday() => FarmTime.EgyptToday();
 
     private static double ResolveLatitude(CROP crop) =>
         (double?)(crop.FarmNavigation?.Latitude ?? crop.UidNavigation?.Latitude) ?? 30.0444;

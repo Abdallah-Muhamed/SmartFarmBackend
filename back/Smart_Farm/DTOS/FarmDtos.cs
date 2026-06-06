@@ -28,6 +28,13 @@ public class CreateFarmDto
     [JsonPropertyName("area_size")]
     public decimal? Area_size { get; set; }
 
+    [JsonPropertyName("area")]
+    public decimal? Area
+    {
+        get => Area_size;
+        set => Area_size = value;
+    }
+
     [JsonPropertyName("default_Soil_type")]
     public string? Default_Soil_type { get; set; }
 

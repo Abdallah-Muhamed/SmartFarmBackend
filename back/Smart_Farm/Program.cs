@@ -35,6 +35,7 @@ if (string.IsNullOrWhiteSpace(connectionString))
 builder.Services.AddMemoryCache();
 builder.Services.AddControllers();
 builder.Services.AddSingleton<CloudinaryService>();
+builder.Services.AddSingleton<Smart_Farm.Application.Services.PaymentSimulationService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {

@@ -1,4 +1,6 @@
-    namespace Smart_Farm.DTOS;
+using System.Text.Json.Serialization;
+
+namespace Smart_Farm.DTOS;
 
     public class CropRequestDto
     {
@@ -15,6 +17,9 @@
         public int Cid { get; set; }
         public int? Pid { get; set; }
         public int? FarmId { get; set; }
+        public string? PlantName { get; set; }
+        public string? FarmName { get; set; }
+        public string? PhotoUrl { get; set; }
         public string? Notes { get; set; }
         public decimal? Area_size { get; set; }
         public DateOnly? Start_date { get; set; }
@@ -25,12 +30,23 @@
 
     public class ProductRequestDto
     {
+        [JsonPropertyName("description")]
         public string? Description { get; set; }
+        [JsonPropertyName("price")]
         public decimal? Price { get; set; }
+        [JsonPropertyName("added_date")]
         public DateOnly? Added_date { get; set; }
+        [JsonPropertyName("quantity")]
         public int? Quantity { get; set; }
+        [JsonPropertyName("cid")]
         public int? Cid { get; set; }
+        [JsonPropertyName("farmId")]
+        public int? FarmId { get; set; }
+        [JsonPropertyName("photoUrl")]
+        public string? PhotoUrl { get; set; }
+        [JsonPropertyName("category")]
         public string? Category { get; set; }
+        [JsonPropertyName("rating")]
         public double? Rating { get; set; }
     }
 
@@ -43,48 +59,76 @@
         public int? Quantity { get; set; }
         public int? Uid { get; set; }
         public int? Cid { get; set; }
+        public int? FarmId { get; set; }
+        public string? PhotoUrl { get; set; }
         public string? Category { get; set; }
-
         public double? Rating { get; set; }
+        public string? SellerName { get; set; }
+        public string? SellerRole { get; set; }
+        public string? FarmName { get; set; }
     }
 
     public class OrderRequestDto
     {
+        [JsonPropertyName("status")]
         public string? Status { get; set; }
+        [JsonPropertyName("order_date")]
         public DateOnly? Order_date { get; set; }
+        [JsonPropertyName("quantity")]
         public int? Quantity { get; set; }
+        [JsonPropertyName("total_price")]
         public decimal? Total_price { get; set; }
+        [JsonPropertyName("pid")]
         public int? Pid { get; set; }
+        [JsonPropertyName("payment_method")]
         public string? Payment_method { get; set; }
+        [JsonPropertyName("promo_code")]
         public string? Promo_code { get; set; }
+        [JsonPropertyName("discount_amount")]
         public decimal? Discount_amount { get; set; }
+        [JsonPropertyName("order_notes")]
         public string? Order_notes { get; set; }
     }
 
     public class BatchOrderLineDto
     {
+        [JsonPropertyName("status")]
         public string? Status { get; set; }
+        [JsonPropertyName("order_date")]
         public DateOnly? Order_date { get; set; }
+        [JsonPropertyName("quantity")]
         public int? Quantity { get; set; }
+        [JsonPropertyName("total_price")]
         public decimal? Total_price { get; set; }
+        [JsonPropertyName("pid")]
         public int? Pid { get; set; }
     }
 
     public class BatchOrderRequestDto
     {
+        [JsonPropertyName("items")]
         public List<BatchOrderLineDto>? Items { get; set; }
+        [JsonPropertyName("payment_method")]
         public string? Payment_method { get; set; }
+        [JsonPropertyName("promo_code")]
         public string? Promo_code { get; set; }
+        [JsonPropertyName("discount_amount")]
         public decimal? Discount_amount { get; set; }
+        [JsonPropertyName("order_notes")]
         public string? Order_notes { get; set; }
     }
 
     public class TaskRequestDto
     {
+        [JsonPropertyName("date")]
         public DateOnly? Date { get; set; }
+        [JsonPropertyName("label")]
         public string? Label { get; set; }
+        [JsonPropertyName("content")]
         public string? Content { get; set; }
+        [JsonPropertyName("state")]
         public string? State { get; set; }
+        [JsonPropertyName("cid")]
         public int? Cid { get; set; }
     }
 
@@ -115,20 +159,31 @@
 
     public class IrrigationRequestDto
     {
+        [JsonPropertyName("irrigation_name")]
         public string? Irrigation_name { get; set; }
+        [JsonPropertyName("description")]
         public string? Description { get; set; }
+        [JsonPropertyName("frequency_unit")]
         public string? Frequency_unit { get; set; }
+        [JsonPropertyName("frequency_value")]
         public int? Frequency_value { get; set; }
+        [JsonPropertyName("water_amount")]
         public decimal? Water_amount { get; set; }
+        [JsonPropertyName("sis")]
         public int? Sis { get; set; }
+        [JsonPropertyName("cid")]
         public int? Cid { get; set; }
     }
 
     public class IrrigationStageRequestDto
     {
+        [JsonPropertyName("name_stage")]
         public string? Name_stage { get; set; }
+        [JsonPropertyName("stage_order")]
         public int? Stage_order { get; set; }
+        [JsonPropertyName("description")]
         public string? Description { get; set; }
+        [JsonPropertyName("cid")]
         public int? Cid { get; set; }
     }
 
@@ -180,8 +235,11 @@
 
     public class RecordIrrigationRequestDto
     {
+        [JsonPropertyName("date")]
         public DateOnly Date { get; set; }
+        [JsonPropertyName("applied")]
         public bool Applied { get; set; }
+        [JsonPropertyName("liters")]
         public decimal? Liters { get; set; }
     }
 

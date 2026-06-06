@@ -18,5 +18,31 @@ public class OrderDTO
 
     public required string UserName { get; set; }
 
+    public string? BuyerName { get; set; }
+
     public required string ProductName { get; set; }
+
+    // Seller contact info
+    public string? SellerName { get; set; }
+
+    public string? SellerPhone { get; set; }
+
+    public string? SellerAddress { get; set; }
+
+    public string? SellerCity { get; set; }
+
+    // Buyer contact info
+    public string? BuyerPhone { get; set; }
+
+    public string? BuyerAddress { get; set; }
+
+    public string? BuyerCity { get; set; }
+
+    public string? Payment_method { get; set; }
+
+    public string? Promo_code { get; set; }
+
+    public decimal? Discount_amount { get; set; }
+
+    public string? Order_notes { get; set; }
 }

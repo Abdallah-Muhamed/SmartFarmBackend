@@ -47,4 +47,7 @@ public partial class FARM
 
     [InverseProperty("FarmNavigation")]
     public virtual ICollection<CROP> CROPs { get; set; } = new List<CROP>();
+
+    [InverseProperty("FarmIdNavigation")]
+    public virtual ICollection<PRODUCT> PRODUCTs { get; set; } = new List<PRODUCT>();
 }

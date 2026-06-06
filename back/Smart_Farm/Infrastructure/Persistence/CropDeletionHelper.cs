@@ -29,6 +29,14 @@ public static class CropDeletionHelper
                 s => s.SetProperty(d => d.Cid, (int?)null).SetProperty(d => d.FarmId, (int?)null),
                 cancellationToken);
 
+        await db.PRODUCTs
+            .Where(p => p.Cid != null && cropIds.Contains(p.Cid.Value))
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.Cid, (int?)null), cancellationToken);
+
+        await db.Tasks
+            .Where(t => t.Cid != null && cropIds.Contains(t.Cid.Value))
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.Cid, (int?)null), cancellationToken);
+
         var crops = await db.CROPs
             .Where(c => cropIds.Contains(c.Cid))
             .Include(c => c.Frs)

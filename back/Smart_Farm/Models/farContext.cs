@@ -178,11 +178,14 @@ public partial class farContext : IdentityDbContext<AppUser, IdentityRole<int>, 
         {
             entity.HasKey(e => e.Pid).HasName("PK__PRODUCT__C5705938F6FC9017");
 
-
             entity.HasOne(d => d.UidNavigation).WithMany(p => p.PRODUCTs).HasConstraintName("FK__PRODUCT__Uid__45F365D3");
+            entity.HasOne(d => d.FarmIdNavigation).WithMany(p => p.PRODUCTs).HasForeignKey(d => d.FarmId);
+            entity.HasOne(d => d.CidNavigation).WithMany().HasForeignKey(d => d.Cid);
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
             entity.HasIndex(e => e.Category);
+            entity.HasIndex(e => e.FarmId);
+            entity.HasIndex(e => e.Cid);
         });
 
         modelBuilder.Entity<SEASON>(entity =>

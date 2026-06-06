@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Smart_Farm.Models;
 
@@ -11,9 +12,11 @@ using Smart_Farm.Models;
 namespace Smart_Farm.Migrations
 {
     [DbContext(typeof(farContext))]
-    partial class farContextModelSnapshot : ModelSnapshot
+    [Migration("20260606163048_AddSellerBuyerContactInfoToOrders")]
+    partial class AddSellerBuyerContactInfoToOrders
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -665,6 +668,18 @@ namespace Smart_Farm.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Oid"));
 
+                    b.Property<string>("BuyerAddress")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("BuyerCity")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("BuyerPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -691,8 +706,21 @@ namespace Smart_Farm.Migrations
                     b.Property<int?>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<int?>("SellerUid")
-                        .HasColumnType("int");
+                    b.Property<string>("SellerAddress")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("SellerCity")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("SellerName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SellerPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Status")
                         .HasMaxLength(50)
@@ -708,8 +736,6 @@ namespace Smart_Farm.Migrations
                         .HasName("PK__ORDERS__CB3E4F31B009E3AD");
 
                     b.HasIndex("Pid");
-
-                    b.HasIndex("SellerUid");
 
                     b.HasIndex("Uid");
 
@@ -1285,18 +1311,12 @@ namespace Smart_Farm.Migrations
                         .HasForeignKey("Pid")
                         .HasConstraintName("FK__ORDERS__Pid__49C3F6B7");
 
-                    b.HasOne("Smart_Farm.Models.USER", "SellerUidNavigation")
-                        .WithMany()
-                        .HasForeignKey("SellerUid");
-
                     b.HasOne("Smart_Farm.Models.USER", "UidNavigation")
                         .WithMany("ORDERs")
                         .HasForeignKey("Uid")
                         .HasConstraintName("FK__ORDERS__Uid__4AB81AF0");
 
                     b.Navigation("PidNavigation");
-
-                    b.Navigation("SellerUidNavigation");
 
                     b.Navigation("UidNavigation");
                 });

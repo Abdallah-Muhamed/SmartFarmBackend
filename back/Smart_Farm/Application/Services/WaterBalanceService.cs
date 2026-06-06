@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Smart_Farm.Application.Abstractions;
+using Smart_Farm.Common;
 using Smart_Farm.DTOS;
 using Smart_Farm.Models;
 
@@ -18,9 +19,7 @@ public class WaterBalanceService : IWaterBalanceService
     private readonly IIrrigationAdviceGenerator _adviceGenerator;
     private readonly ILogger<WaterBalanceService> _logger;
 
-    private const double MM_TO_M3_PER_FEDDAN = 4.2;
-    private const double RAIN_RUNOFF_FACTOR = 0.8;
-    private const double IRRIG_EFFICIENCY = 0.85;
+    private const double MM_TO_M3_PER_FEDDAN = IrrigationMath.MmToM3PerFeddan;
 
     public WaterBalanceService(
         farContext db,
@@ -47,6 +46,12 @@ public class WaterBalanceService : IWaterBalanceService
             throw new InvalidOperationException("'to' must be on or after 'from'.");
 
         var crop = await LoadCropAsync(cid, cancellationToken);
+        if (crop.Start_date is null)
+            throw new InvalidOperationException($"Crop {cid} has no start date.");
+
+        if (from < crop.Start_date.Value)
+            from = crop.Start_date.Value;
+
         await SyncThroughAsync(crop, to, cancellationToken);
 
         var logs = await _db.CROP_WATER_BALANCE_LOGs
@@ -63,6 +68,7 @@ public class WaterBalanceService : IWaterBalanceService
         int cid, DateOnly date, bool applied, decimal? appliedLiters, CancellationToken cancellationToken)
     {
         var crop = await LoadCropAsync(cid, cancellationToken);
+        ValidateDate(crop, date);
         await SyncThroughAsync(crop, date, cancellationToken);
 
         var log = await _db.CROP_WATER_BALANCE_LOGs
@@ -76,11 +82,11 @@ public class WaterBalanceService : IWaterBalanceService
         if (applied)
         {
             var appliedMm = appliedLiters.HasValue
-                ? LitersToMm(appliedLiters.Value, areaFeddan)
+                ? IrrigationMath.LitersToMm(appliedLiters.Value, areaFeddan)
                 : log.Irrig_mm ?? 0m;
 
             log.Applied_mm = appliedMm;
-            log.DeplEnd_mm = ComputeDeplEndAfterApplication(
+            log.DeplEnd_mm = IrrigationMath.DepletionEndAfterApplication(
                 log.DeplAfterEt_mm ?? log.DeplStart_mm ?? 0m,
                 appliedMm,
                 log.Irrig_mm ?? 0m);
@@ -96,7 +102,7 @@ public class WaterBalanceService : IWaterBalanceService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = FarmTime.EgyptToday();
         if (date < today)
             await RecomputeForwardAsync(crop, date.AddDays(1), today, cancellationToken);
 
@@ -112,11 +118,13 @@ public class WaterBalanceService : IWaterBalanceService
         int cid, DateOnly date, bool includeAdvice, CancellationToken cancellationToken)
     {
         var crop = await LoadCropAsync(cid, cancellationToken);
+        ValidateDate(crop, date);
         await SyncThroughAsync(crop, date, cancellationToken);
 
         var log = await _db.CROP_WATER_BALANCE_LOGs
             .AsNoTracking()
-            .FirstAsync(x => x.Cid == cid && x.Date == date, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Cid == cid && x.Date == date, cancellationToken)
+            ?? throw new InvalidOperationException($"No balance log for crop {cid} on {date:yyyy-MM-dd}.");
 
         var dto = MapDayDto(crop, log);
 
@@ -201,9 +209,16 @@ public class WaterBalanceService : IWaterBalanceService
             _db.CROP_WATER_BALANCE_LOGs.Add(existing);
         }
 
-        double deplEnd = existing.WasApplied == true
-            ? (double)(existing.DeplEnd_mm ?? (decimal)computation.DeplAfterEt)
-            : computation.DeplAfterEt;
+        double deplEnd;
+        if (existing.WasApplied == true)
+        {
+            deplEnd = (double)(existing.DeplEnd_mm ?? (decimal)computation.DeplAfterEt);
+        }
+        else
+        {
+            deplEnd = computation.DeplAfterEt;
+            existing.DeplEnd_mm = Round2(deplEnd);
+        }
 
         existing.ET0_mm = Round2(computation.Et0);
         existing.Kc = Round2(computation.Kc);
@@ -218,9 +233,6 @@ public class WaterBalanceService : IWaterBalanceService
         existing.Recommended_Liters = computation.RecommendedLiters;
         existing.StageName = computation.StageName;
         existing.Note = computation.SoilNote;
-
-        if (existing.WasApplied is null)
-            existing.DeplEnd_mm = Round2(deplEnd);
 
         crop.Depletion_mm = (decimal)Math.Round(deplEnd, 2);
         crop.LastBalanceDate = date;
@@ -259,7 +271,7 @@ public class WaterBalanceService : IWaterBalanceService
             throw new InvalidOperationException($"No PLANT_STAGE rows for Pid={crop.Pid}.");
 
         var daysSinceStart = Math.Max(0, date.DayNumber - crop.Start_date!.Value.DayNumber);
-        var currentStage = ResolveCurrentStage(stages, daysSinceStart);
+        var currentStage = IrrigationMath.ResolveCurrentStage(stages, daysSinceStart);
         var stageName = currentStage.Name_stage ?? $"مرحلة {currentStage.Stage_order}";
 
         var template = await _db.PLANT_IRRIGATION_TEMPLATEs
@@ -283,19 +295,11 @@ public class WaterBalanceService : IWaterBalanceService
         double et0 = Hargreaves.Compute(wx.Tmin_C, wx.Tmax_C, lat, date);
         double etc = kc * et0;
 
-        double rawRain = Math.Max(0, wx.Rain_mm) * RAIN_RUNOFF_FACTOR;
-        double effRain = Math.Min(rawRain, Math.Max(0, deplStart + tawMm));
-        if (effRain < 0) effRain = 0;
-
-        double deplAfterEt = Math.Max(0, deplStart + etc - effRain);
-        bool isIrrigDay = deplAfterEt >= rawMm;
-        double recommendedIrrigMm = 0;
+        double effRain = IrrigationMath.EffectiveRain(wx.Rain_mm, deplStart, tawMm);
+        double deplAfterEt = IrrigationMath.DepletionAfterEt(deplStart, etc, effRain);
+        bool isIrrigDay = IrrigationMath.IsIrrigationDay(deplAfterEt, rawMm);
+        double recommendedIrrigMm = IrrigationMath.RecommendedIrrigationMm(deplAfterEt, isIrrigDay);
         double deplEnd = deplAfterEt;
-
-        if (isIrrigDay)
-        {
-            recommendedIrrigMm = Math.Round(deplAfterEt / IRRIG_EFFICIENCY, 2);
-        }
 
         decimal m3PerFeddan = (decimal)Math.Round(recommendedIrrigMm * MM_TO_M3_PER_FEDDAN, 2);
         decimal liters = Math.Round(m3PerFeddan * areaFeddan * 1000m, 0);
@@ -325,20 +329,15 @@ public class WaterBalanceService : IWaterBalanceService
             .FirstOrDefaultAsync(c => c.Cid == cid, cancellationToken)
         ?? throw new InvalidOperationException($"Crop {cid} not found.");
 
-    private static decimal ComputeDeplEndAfterApplication(decimal deplAfterEt, decimal appliedMm, decimal recommendedMm)
+    private static void ValidateDate(CROP crop, DateOnly date)
     {
-        if (appliedMm <= 0) return deplAfterEt;
-        if (recommendedMm > 0 && appliedMm >= recommendedMm * 0.95m) return 0m;
-        var netApplied = appliedMm * (decimal)IRRIG_EFFICIENCY;
-        return Math.Max(0m, deplAfterEt - netApplied);
-    }
+        if (crop.Start_date is null)
+            throw new InvalidOperationException($"Crop {crop.Cid} has no start date.");
 
-    private static decimal LitersToMm(decimal liters, decimal areaFeddan)
-    {
-        if (areaFeddan <= 0) areaFeddan = 1m;
-        var m3 = liters / 1000m;
-        var m3PerFeddan = m3 / areaFeddan;
-        return Math.Round(m3PerFeddan / (decimal)MM_TO_M3_PER_FEDDAN, 2);
+        if (date < crop.Start_date.Value)
+            throw new InvalidOperationException(
+                $"Date {date:yyyy-MM-dd} is before planting date {crop.Start_date:yyyy-MM-dd}.");
+
     }
 
     private static IrrigationDayDto MapDayDto(CROP crop, CROP_WATER_BALANCE_LOG log)
@@ -435,18 +434,6 @@ public class WaterBalanceService : IWaterBalanceService
             SoilWeatherNotes = $"تربة {dto.SoilType} — استهلاك نباتي تقديري {dto.ETc_mm} مم مع أمطار فعّالة {dto.EffRain_mm} مم.",
             Warnings = "تعذّر توليد تقرير مفصّل حالياً — راجع الكميات المحسوبة في النظام."
         };
-
-    private static PLANT_STAGE ResolveCurrentStage(List<PLANT_STAGE> stages, int daysSinceStart)
-    {
-        int cum = 0;
-        foreach (var s in stages)
-        {
-            cum += s.Duration_days;
-            if (daysSinceStart < cum)
-                return s;
-        }
-        return stages[^1];
-    }
 
     private static double ResolveLatitude(CROP crop) =>
         (double?)(crop.FarmNavigation?.Latitude ?? crop.UidNavigation?.Latitude) ?? 30.0444;

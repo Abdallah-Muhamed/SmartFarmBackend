@@ -40,6 +40,9 @@ public partial class ORDER
     [Column(TypeName = "nvarchar(max)")]
     public string Order_notes { get; set; }
 
+    // Seller UID (foreign key to USER table)
+    public int? SellerUid { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     [ForeignKey("Pid")]
@@ -49,4 +52,7 @@ public partial class ORDER
     [ForeignKey("Uid")]
     [InverseProperty("ORDERs")]
     public virtual USER UidNavigation { get; set; }
+
+    [ForeignKey("SellerUid")]
+    public virtual USER SellerUidNavigation { get; set; }
 }

@@ -27,6 +27,12 @@ public partial class PRODUCT
 
     public int? Uid { get; set; }
 
+    public int? FarmId { get; set; }
+
+    public int? Cid { get; set; }
+
+    [Column(TypeName = "nvarchar(max)")]
+    public string PhotoUrl { get; set; }
 
     [StringLength(50)]
     public string Category { get; set; }
@@ -43,4 +49,11 @@ public partial class PRODUCT
     [ForeignKey("Uid")]
     [InverseProperty("PRODUCTs")]
     public virtual USER UidNavigation { get; set; }
+
+    [ForeignKey("FarmId")]
+    [InverseProperty("PRODUCTs")]
+    public virtual FARM FarmIdNavigation { get; set; }
+
+    [ForeignKey("Cid")]
+    public virtual CROP CidNavigation { get; set; }
 }

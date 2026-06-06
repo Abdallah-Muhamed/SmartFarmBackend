@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Smart_Farm.Application.Abstractions;
+using Smart_Farm.Common;
 using Smart_Farm.DTOS;
 using Smart_Farm.Infrastructure.Security;
 using Smart_Farm.Models;
@@ -18,8 +19,6 @@ namespace Smart_Farm.Controllers;
 [ApiController]
 public class IrrigationController(IWaterBalanceService service, farContext db) : ControllerBase
 {
-    private const int EgyptUtcOffsetHours = 2;
-
     [HttpGet("crop/{cid:int}")]
     public async Task<ActionResult<IrrigationDayDto>> GetCropDay(
         int cid,
@@ -30,7 +29,7 @@ public class IrrigationController(IWaterBalanceService service, farContext db) :
         var auth = CropAuthorization.EnsureCropOwnedByUser(db, cid, uid);
         if (auth is not null) return auth;
 
-        var target = date ?? EgyptToday();
+        var target = date ?? FarmTime.EgyptToday();
 
         try
         {
@@ -54,7 +53,7 @@ public class IrrigationController(IWaterBalanceService service, farContext db) :
         var auth = CropAuthorization.EnsureCropOwnedByUser(db, cid, uid);
         if (auth is not null) return auth;
 
-        var end = to ?? EgyptToday();
+        var end = to ?? FarmTime.EgyptToday();
         var start = from ?? end.AddDays(-30);
 
         try
@@ -91,6 +90,4 @@ public class IrrigationController(IWaterBalanceService service, farContext db) :
         }
     }
 
-    private static DateOnly EgyptToday() =>
-        DateOnly.FromDateTime(DateTime.UtcNow.AddHours(EgyptUtcOffsetHours));
 }
