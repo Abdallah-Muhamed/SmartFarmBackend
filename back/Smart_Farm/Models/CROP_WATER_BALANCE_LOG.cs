@@ -28,15 +28,35 @@ public partial class CROP_WATER_BALANCE_LOG
     [Column(TypeName = "decimal(6, 2)")]
     public decimal? EffRain_mm { get; set; }
 
-    // Irrigation applied this day (mm).
+    // Recommended irrigation for this day (mm).
     [Column(TypeName = "decimal(6, 2)")]
     public decimal? Irrig_mm { get; set; }
+
+    public bool IsIrrigationDay { get; set; }
+
+    public bool? WasApplied { get; set; }
+
+    public DateTime? AppliedAt { get; set; }
+
+    // Actual irrigation applied by the farmer (mm).
+    [Column(TypeName = "decimal(6, 2)")]
+    public decimal? Applied_mm { get; set; }
+
+    [Column(TypeName = "decimal(12, 2)")]
+    public decimal? Recommended_Liters { get; set; }
+
+    [StringLength(100)]
+    public string? StageName { get; set; }
 
     // Depletion at start of day (mm).
     [Column(TypeName = "decimal(8, 2)")]
     public decimal? DeplStart_mm { get; set; }
 
-    // Depletion at end of day (mm, after ETc, rain, and irrigation).
+    // Depletion after ETc and rain, before irrigation (mm).
+    [Column(TypeName = "decimal(8, 2)")]
+    public decimal? DeplAfterEt_mm { get; set; }
+
+    // Depletion at end of day (mm, after recording irrigation if any).
     [Column(TypeName = "decimal(8, 2)")]
     public decimal? DeplEnd_mm { get; set; }
 

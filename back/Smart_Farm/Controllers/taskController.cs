@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Smart_Farm.Application.Abstractions;
 using Smart_Farm.DTOS;
 using Smart_Farm.Infrastructure.Security;
 using Smart_Farm.Models;
@@ -13,11 +14,13 @@ namespace Smart_Farm.Controllers
     [ApiController]
     public class taskController : ControllerBase
     {
-        farContext db;
+        private readonly farContext db;
+        private readonly IWaterBalanceService _waterBalance;
 
-        public taskController(farContext db)
+        public taskController(farContext db, IWaterBalanceService waterBalance)
         {
             this.db = db;
+            _waterBalance = waterBalance;
         }
 
         //list
@@ -35,7 +38,8 @@ namespace Smart_Farm.Controllers
                     Label = t.Label,
                     Content = t.Content,
                     State = t.State,
-                    Uid = t.Uid
+                    Uid = t.Uid,
+                    Cid = t.Cid
                 })
                 .ToList();
 
@@ -58,7 +62,8 @@ namespace Smart_Farm.Controllers
                 Label = b.Label,
                 Content = b.Content,
                 State = b.State,
-                Uid = b.Uid
+                Uid = b.Uid,
+                Cid = b.Cid
             });
         }
 
@@ -111,7 +116,8 @@ namespace Smart_Farm.Controllers
                 Label = entity.Label,
                 Content = entity.Content,
                 State = entity.State,
-                Uid = entity.Uid
+                Uid = entity.Uid,
+                Cid = entity.Cid
             });
         }
 
@@ -147,6 +153,28 @@ namespace Smart_Farm.Controllers
 
             entity.State = state;
             await db.SaveChangesAsync(ct);
+
+            if (entity.Cid is int cid
+                && entity.Date is DateOnly taskDate
+                && !string.IsNullOrWhiteSpace(entity.Label)
+                && entity.Label.StartsWith("ري", StringComparison.Ordinal)
+                && state is "done" or "skipped")
+            {
+                try
+                {
+                    await _waterBalance.RecordAsync(
+                        cid,
+                        taskDate,
+                        applied: state == "done",
+                        appliedLiters: null,
+                        ct);
+                }
+                catch (InvalidOperationException)
+                {
+                    // Task state is saved; irrigation log may not exist yet for this date.
+                }
+            }
+
             return Ok(new { Task_id = entity.Task_id, State = entity.State });
         }
     }

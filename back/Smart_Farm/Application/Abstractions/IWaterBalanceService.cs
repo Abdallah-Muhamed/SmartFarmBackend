@@ -2,42 +2,19 @@ using Smart_Farm.DTOS;
 
 namespace Smart_Farm.Application.Abstractions;
 
-public class IrrigationRecommendationDto
-{
-    public int Cid { get; set; }
-    public DateOnly Date { get; set; }
-    public string PlantName { get; set; } = default!;
-    public string StageName { get; set; } = default!;
-    public string SoilType { get; set; } = default!;
-    public decimal AreaFeddan { get; set; }
-
-    public bool IsIrrigationDay { get; set; }
-
-    // Final recommendation.
-    public decimal Recommended_m3_per_feddan { get; set; }
-    public decimal Recommended_m3_field { get; set; }
-    public decimal Recommended_Liters_field { get; set; }
-
-    // Diagnostics — the numbers the recommendation was built from.
-    public decimal ET0_mm { get; set; }
-    public decimal Kc { get; set; }
-    public decimal ETc_mm { get; set; }
-    public decimal EffRain_mm { get; set; }
-    public decimal TAW_mm { get; set; }
-    public decimal RAW_mm { get; set; }
-    public decimal DeplStart_mm { get; set; }
-    public decimal DeplAfterEt_mm { get; set; }
-    public decimal DeplEnd_mm { get; set; }
-    public decimal Irrig_mm { get; set; }
-
-    public IrrigationAdviceReportDto? Reasoning { get; set; }
-}
-
 public interface IWaterBalanceService
 {
-    Task<IrrigationRecommendationDto> ComputeDailyAsync(
-        int cid,
-        DateOnly date,
-        bool persist,
-        CancellationToken cancellationToken);
+    /// <summary>Backfills missing days through <paramref name="date"/> and returns that day's status.</summary>
+    Task<IrrigationDayDto> GetDayAsync(int cid, DateOnly date, bool includeAdvice, CancellationToken cancellationToken);
+
+    /// <summary>Daily irrigation calendar for a crop (backfills through <paramref name="to"/>).</summary>
+    Task<IReadOnlyList<IrrigationCalendarDayDto>> GetCalendarAsync(
+        int cid, DateOnly from, DateOnly to, CancellationToken cancellationToken);
+
+    /// <summary>Record whether the farmer irrigated on a given day.</summary>
+    Task<IrrigationDayDto> RecordAsync(
+        int cid, DateOnly date, bool applied, decimal? appliedLiters, CancellationToken cancellationToken);
+
+    /// <summary>Used by the morning background job to persist today's balance for all crops.</summary>
+    Task<IrrigationDayDto> SyncDayAsync(int cid, DateOnly date, CancellationToken cancellationToken);
 }

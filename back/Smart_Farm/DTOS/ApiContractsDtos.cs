@@ -85,6 +85,7 @@
         public string? Label { get; set; }
         public string? Content { get; set; }
         public string? State { get; set; }
+        public int? Cid { get; set; }
     }
 
     public class TaskResponseDto
@@ -95,6 +96,7 @@
         public string? Content { get; set; }
         public string? State { get; set; }
         public int? Uid { get; set; }
+        public int? Cid { get; set; }
     }
 
     public class UserUpdateDto
@@ -130,38 +132,65 @@
         public int? Cid { get; set; }
     }
 
-    public class IrrigationRecommendationResponseDto
+    public class IrrigationDayDto
     {
-        public int CropId { get; set; }
-        public string? CurrentStage { get; set; }
-        public int IntervalDays { get; set; }
-        public string? NextIrrigationDate { get; set; }
-        public string? LastIrrigationDate { get; set; }
-        public bool IsDueToday { get; set; }
-        public bool IsDoneToday { get; set; }
-        public decimal RecommendedLiters { get; set; }
-        public string? IrrigationMethod { get; set; }
-        public int DurationMinutes { get; set; }
-    }
-public class StageIrrigationRecommendationDto
-{
-    public int? StageOrder { get; set; }
-    public string? StageName { get; set; }
-    public string? Description { get; set; }
-    public int DurationDays { get; set; }
-    public int StageStartDay { get; set; }
-    public int StageEndDay { get; set; }
-    public bool IsCurrentStage { get; set; }
-    public int IntervalDays { get; set; }
-    public string? IrrigationMethod { get; set; }
-    public decimal RecommendedLiters { get; set; }
-    public int DurationMinutes { get; set; }
-}
+        public int Cid { get; set; }
+        public DateOnly Date { get; set; }
+        public string? PlantName { get; set; }
+        public string? StageName { get; set; }
+        public string? SoilType { get; set; }
+        public decimal AreaFeddan { get; set; }
 
-public class AllStagesIrrigationResponseDto
+        public bool IsIrrigationDay { get; set; }
+        public bool? WasApplied { get; set; }
+        public DateTime? AppliedAt { get; set; }
+
+        public decimal Recommended_m3_per_feddan { get; set; }
+        public decimal Recommended_m3_field { get; set; }
+        public decimal Recommended_Liters { get; set; }
+        public decimal? Applied_Liters { get; set; }
+
+        public decimal ET0_mm { get; set; }
+        public decimal Kc { get; set; }
+        public decimal ETc_mm { get; set; }
+        public decimal EffRain_mm { get; set; }
+        public decimal TAW_mm { get; set; }
+        public decimal RAW_mm { get; set; }
+        public decimal DeplStart_mm { get; set; }
+        public decimal DeplAfterEt_mm { get; set; }
+        public decimal DeplEnd_mm { get; set; }
+        public decimal Recommended_mm { get; set; }
+        public decimal? Applied_mm { get; set; }
+
+        public IrrigationAdviceReportDto? Reasoning { get; set; }
+    }
+
+    public class IrrigationCalendarDayDto
+    {
+        public DateOnly Date { get; set; }
+        public string? StageName { get; set; }
+        public bool IsIrrigationDay { get; set; }
+        public bool? WasApplied { get; set; }
+        public decimal Recommended_Liters { get; set; }
+        public decimal? Applied_Liters { get; set; }
+        public decimal DeplEnd_mm { get; set; }
+        public decimal ETc_mm { get; set; }
+        public decimal EffRain_mm { get; set; }
+    }
+
+    public class RecordIrrigationRequestDto
+    {
+        public DateOnly Date { get; set; }
+        public bool Applied { get; set; }
+        public decimal? Liters { get; set; }
+    }
+
+public class PlantStageDto
 {
-    public int CropId { get; set; }
-    public string? PlantingDate { get; set; }
-    public int TotalDays { get; set; }
-    public List<StageIrrigationRecommendationDto> Stages { get; set; } = new();
+    public int PSid { get; set; }
+    public int? Pid { get; set; }
+    public string? Name_stage { get; set; }
+    public int? Stage_order { get; set; }
+    public int Duration_days { get; set; }
+    public string? Description { get; set; }
 }

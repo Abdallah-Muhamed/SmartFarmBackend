@@ -98,18 +98,18 @@ public sealed class WeatherTaskGeneratorService : BackgroundService
             // ── Shared weather alerts (one per user per day) ──────────────────
             foreach (var uid in farmGroup.Select(c => c.Uid!.Value).Distinct())
             {
-                await AddIfNotExistsAsync(tasksToAdd, db, uid, today,
+                await AddIfNotExistsAsync(tasksToAdd, db, uid, cid: null, today,
                     label:   "حرارة مرتفعة",
                     content: $"⚠️ درجة الحرارة القصوى اليوم {wx.Tmax_C:0}°C — احرص على رش المزروعات صباحاً وتوفير تهوية كافية.",
                     when:    wx.Tmax_C >= 38, ct);
 
-                await AddIfNotExistsAsync(tasksToAdd, db, uid, today,
+                await AddIfNotExistsAsync(tasksToAdd, db, uid, cid: null, today,
                     label:   "أمطار متوقعة",
                     content: $"⛅ متوقع هطول {wx.Rain_mm:0.0}mm اليوم — قد لا يكون الري ضرورياً. سيتم التحقق مساءً من الواقع.",
                     when:    wx.Rain_mm >= 10, ct);
 
                 var windKmh = (wx.Wind_mps ?? 0) * 3.6;
-                await AddIfNotExistsAsync(tasksToAdd, db, uid, today,
+                await AddIfNotExistsAsync(tasksToAdd, db, uid, cid: null, today,
                     label:   "رياح قوية",
                     content: $"💨 رياح قوية {windKmh:0} km/h — تأجيل رش المبيدات والأسمدة الورقية.",
                     when:    windKmh >= 40, ct);
@@ -122,16 +122,16 @@ public sealed class WeatherTaskGeneratorService : BackgroundService
 
                 try
                 {
-                    var rec = await waterBalance.ComputeDailyAsync(crop.Cid, today, persist: true, ct);
+                    var rec = await waterBalance.SyncDayAsync(crop.Cid, today, ct);
 
                     if (rec.IsIrrigationDay)
                     {
                         var farmName = crop.FarmNavigation?.Name ?? $"مزرعة {crop.FarmId}";
                         var label = $"ري {rec.PlantName} - {farmName}";
-                        await AddIfNotExistsAsync(tasksToAdd, db, crop.Uid.Value, today,
+                        await AddIfNotExistsAsync(tasksToAdd, db, crop.Uid.Value, crop.Cid, today,
                             label:   label,
                             content: $"💧 {rec.PlantName} ({rec.StageName}) في {farmName} يحتاج ري اليوم.\n" +
-                                     $"الكمية: {rec.Recommended_Liters_field:0} لتر ({rec.Recommended_m3_field:0.0} م³) لـ {rec.AreaFeddan} فدان.\n" +
+                                     $"الكمية: {rec.Recommended_Liters:0} لتر ({rec.Recommended_m3_field:0.0} م³) لـ {rec.AreaFeddan} فدان.\n" +
                                      $"ET0={rec.ET0_mm}mm | Kc={rec.Kc} | أمطار فعالة={rec.EffRain_mm}mm",
                             when:    true, ct);
                     }
@@ -192,7 +192,7 @@ public sealed class WeatherTaskGeneratorService : BackgroundService
             // If actual rain < 5mm but morning forecast ≥ 10mm → correction needed
             if (actual.Rain_mm < 5)
             {
-                await AddIfNotExistsAsync(tasksToAdd, db, uid, today,
+                await AddIfNotExistsAsync(tasksToAdd, db, uid, cid: null, today,
                     label:   "تصحيح توقعات الأمطار",
                     content: $"⚠️ كان متوقعاً هطول أمطار اليوم ولكن لم تمطر (فعلي: {actual.Rain_mm:0.0}mm).\n" +
                              $"تحقق من محاصيلك وقرر إذا كان الري ضرورياً الآن.",
@@ -216,6 +216,7 @@ public sealed class WeatherTaskGeneratorService : BackgroundService
         List<FarmTask> buffer,
         Smart_Farm.Models.farContext db,
         int uid,
+        int? cid,
         DateOnly date,
         string label,
         string content,
@@ -233,6 +234,7 @@ public sealed class WeatherTaskGeneratorService : BackgroundService
         buffer.Add(new FarmTask
         {
             Uid       = uid,
+            Cid       = cid,
             Date      = date,
             Label     = label,
             Content   = content,

@@ -196,7 +196,14 @@ public partial class farContext : IdentityDbContext<AppUser, IdentityRole<int>, 
 
             entity.HasOne(d => d.UidNavigation).WithMany(p => p.Tasks).HasConstraintName("FK__Task__Uid__3C69FB99");
 
+            entity.HasOne(d => d.CidNavigation).WithMany().HasForeignKey(d => d.Cid);
+
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+        });
+
+        modelBuilder.Entity<CROP_WATER_BALANCE_LOG>(entity =>
+        {
+            entity.HasIndex(e => new { e.Cid, e.Date }).IsUnique();
         });
 
         modelBuilder.Entity<REVIEW>(entity =>
